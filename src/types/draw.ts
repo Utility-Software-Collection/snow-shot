@@ -32,6 +32,12 @@ export enum DrawState {
 	Highlight = 15,
 	// 自由绘制模糊
 	BlurFreeDraw = 16,
+	// 打码
+	Mosaic = 17,
+	// 尺寸校准
+	DimensionCalibrate = 18,
+	// 尺寸标注
+	DimensionMeasure = 19,
 	// 撤销
 	Undo = 101,
 	// 重做

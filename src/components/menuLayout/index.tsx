@@ -293,6 +293,19 @@ const MenuLayoutCore: React.FC<{ children: React.ReactNode }> = ({
 						],
 					},
 					{
+						key: "/settings/toolbarPreview",
+						path: "/settings/toolbarPreview",
+						label: intl.formatMessage({ id: "menu.settings.toolbarPreview" }),
+						tabs: [
+							{
+								key: "toolbarPreview",
+								label: intl.formatMessage({
+									id: "settings.toolbarPreview",
+								}),
+							},
+						],
+					},
+					{
 						key: "/settings/functionSettings",
 						path: "/settings/functionSettings",
 						label: intl.formatMessage({ id: "menu.settings.functionSettings" }),
@@ -464,6 +477,12 @@ const MenuLayoutCore: React.FC<{ children: React.ReactNode }> = ({
 								key: "coreSettings",
 								label: intl.formatMessage({
 									id: "settings.systemSettings.coreSettings",
+								}),
+							},
+							{
+								key: "branchFunctionSettings",
+								label: intl.formatMessage({
+									id: "settings.systemSettings.branchFunctionSettings",
 								}),
 							},
 							{

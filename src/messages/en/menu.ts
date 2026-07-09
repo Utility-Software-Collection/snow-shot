@@ -3,6 +3,7 @@ export const menu = {
 	"menu.screenshot": "Screenshot",
 	"menu.settings": "Settings",
 	"menu.settings.generalSettings": "Interface Settings",
+	"menu.settings.toolbarPreview": "Toolbar Preview",
 	"menu.settings.functionSettings": "Function Settings",
 	"menu.settings.hotKeySettings": "Hotkey Settings",
 	"menu.settings.systemSettings": "System Settings",

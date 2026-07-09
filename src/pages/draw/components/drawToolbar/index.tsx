@@ -29,6 +29,7 @@ import {
 	EraserIcon,
 	FastSaveIcon,
 	FixedIcon,
+	MosaicIcon,
 	OcrDetectIcon,
 	OcrTranslateIcon,
 	PenIcon,
@@ -118,12 +119,15 @@ const isDrawTool = (drawState: DrawState) => {
 		case DrawState.Diamond:
 		case DrawState.Ellipse:
 		case DrawState.Arrow:
+		case DrawState.DimensionCalibrate:
+		case DrawState.DimensionMeasure:
 		case DrawState.Line:
 		case DrawState.Pen:
 		case DrawState.Text:
 		case DrawState.SerialNumber:
 		case DrawState.Blur:
 		case DrawState.BlurFreeDraw:
+		case DrawState.Mosaic:
 		case DrawState.Watermark:
 		case DrawState.Highlight:
 			return true;
@@ -388,6 +392,8 @@ const DrawToolbarCore: React.FC<DrawToolbarProps> = ({
 					);
 					break;
 				case DrawState.Arrow:
+				case DrawState.DimensionCalibrate:
+				case DrawState.DimensionMeasure:
 					drawLayerActionRef.current?.setActiveTool(
 						{
 							type: "arrow",
@@ -430,6 +436,16 @@ const DrawToolbarCore: React.FC<DrawToolbarProps> = ({
 				case DrawState.SerialNumber:
 					break;
 				case DrawState.Blur:
+					drawLayerActionRef.current?.setActiveTool(
+						{
+							type: "blur",
+							locked: toolLocked,
+						},
+						undefined,
+						next,
+					);
+					break;
+				case DrawState.Mosaic:
 					drawLayerActionRef.current?.setActiveTool(
 						{
 							type: "blur",
@@ -863,6 +879,18 @@ const DrawToolbarCore: React.FC<DrawToolbarProps> = ({
 								customToolbarToolHiddenMap={customToolbarToolHiddenMap}
 								onToolClickAction={onToolClick}
 								disable={disableNormalScreenshotTool}
+							/>
+
+							{/* 打码 */}
+							<ToolButton
+								hidden={customToolbarToolHiddenMap?.[DrawState.Mosaic]}
+								componentKey={DrawToolbarKeyEventKey.MosaicTool}
+								icon={<MosaicIcon style={{ fontSize: "1em" }} />}
+								drawState={DrawState.Mosaic}
+								disable={disableNormalScreenshotTool}
+								onClick={() => {
+									onToolClick(DrawState.Mosaic);
+								}}
 							/>
 
 							{/* 橡皮擦 */}

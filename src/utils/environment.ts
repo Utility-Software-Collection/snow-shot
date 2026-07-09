@@ -69,8 +69,14 @@ export function listenDevicePixelRatio(callback: (ratio: number) => void) {
 	};
 }
 
+let disableWebViewSharedBuffer = false;
+export function setDisableWebViewSharedBuffer(value: boolean) {
+	disableWebViewSharedBuffer = value;
+}
+
 export function supportWebViewSharedBuffer() {
 	if (
+		disableWebViewSharedBuffer ||
 		getPlatform() !== "windows" ||
 		!("chrome" in window) ||
 		!("webview" in window.chrome) ||

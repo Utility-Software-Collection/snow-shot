@@ -24,7 +24,15 @@ import {
 	Typography,
 	theme,
 } from "antd";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+	lazy,
+	Suspense,
+	useCallback,
+	useContext,
+	useEffect,
+	useMemo,
+	useState,
+} from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { restartWithAdmin } from "@/commands/core";
 import { createLocalConfigDir, getAppConfigBaseDir } from "@/commands/file";
@@ -50,7 +58,12 @@ import { clearAllAppStore } from "@/utils/appStore";
 import { CaptureHistory } from "@/utils/captureHistory";
 import { getConfigDirPath, isAdminWithCache } from "@/utils/environment";
 import { appError } from "@/utils/log";
-import { MacOSPermissionsSettings } from "./components/macosPermissionsSettings";
+
+const LazyMacOSPermissionsSettings = lazy(() =>
+	import("./components/macosPermissionsSettings").then((module) => ({
+		default: module.MacOSPermissionsSettings,
+	})),
+);
 
 export const SystemSettingsPage = () => {
 	const intl = useIntl();
@@ -62,6 +75,8 @@ export const SystemSettingsPage = () => {
 		Form.useForm<AppSettingsData[AppSettingsGroup.SystemCommon]>();
 	const [coreForm] =
 		Form.useForm<AppSettingsData[AppSettingsGroup.SystemCore]>();
+	const [branchForm] =
+		Form.useForm<AppSettingsData[AppSettingsGroup.FunctionBranch]>();
 	// const [renderForm] = Form.useForm<AppSettingsData[AppSettingsGroup.Render]>();
 	const [scrollScreenshotForm] =
 		Form.useForm<AppSettingsData[AppSettingsGroup.SystemScrollScreenshot]>();
@@ -136,6 +151,14 @@ export const SystemSettingsPage = () => {
 				) {
 					coreForm.setFieldsValue(settings[AppSettingsGroup.SystemCore]);
 				}
+
+				if (
+					preSettings === undefined ||
+					preSettings[AppSettingsGroup.FunctionBranch] !==
+						settings[AppSettingsGroup.FunctionBranch]
+				) {
+					branchForm.setFieldsValue(settings[AppSettingsGroup.FunctionBranch]);
+				}
 			},
 			[
 				commonForm,
@@ -144,6 +167,7 @@ export const SystemSettingsPage = () => {
 				scrollScreenshotForm,
 				screenshotForm,
 				coreForm,
+				branchForm,
 			],
 		),
 		true,
@@ -359,7 +383,9 @@ export const SystemSettingsPage = () => {
 
 			{currentPlatform === "macos" && (
 				<>
-					<MacOSPermissionsSettings />
+					<Suspense fallback={<Spin size="small" />}>
+						<LazyMacOSPermissionsSettings />
+					</Suspense>
 
 					<Divider />
 				</>
@@ -998,6 +1024,59 @@ export const SystemSettingsPage = () => {
 								fieldProps={{
 									precision: 0,
 								}}
+							/>
+						</Col>
+					</Row>
+				</ProForm>
+			</Spin>
+
+			<Divider />
+
+			<GroupTitle
+				id="branchFunctionSettings"
+				extra={
+					<ResetSettingsButton
+						title={
+							<FormattedMessage id="settings.systemSettings.branchFunctionSettings" />
+						}
+						appSettingsGroup={AppSettingsGroup.FunctionBranch}
+					/>
+				}
+			>
+				<FormattedMessage id="settings.systemSettings.branchFunctionSettings" />
+			</GroupTitle>
+
+			<Spin spinning={appSettingsLoading}>
+				<ProForm
+					form={branchForm}
+					onValuesChange={(_, values) => {
+						updateAppSettings(
+							AppSettingsGroup.FunctionBranch,
+							values,
+							true,
+							true,
+							false,
+							true,
+						);
+					}}
+					submitter={false}
+					layout="horizontal"
+				>
+					<Row gutter={token.marginLG}>
+						<Col span={12}>
+							<ProFormSwitch
+								label={
+									<IconLabel
+										label={
+											<FormattedMessage id="settings.systemSettings.branchFunctionSettings.disableWebViewSharedBuffer" />
+										}
+										tooltipTitle={
+											<FormattedMessage id="settings.systemSettings.branchFunctionSettings.disableWebViewSharedBuffer.tip" />
+										}
+									/>
+								}
+								name="disableWebViewSharedBuffer"
+								valuePropName="checked"
 							/>
 						</Col>
 					</Row>

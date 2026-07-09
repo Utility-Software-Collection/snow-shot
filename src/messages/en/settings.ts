@@ -49,6 +49,13 @@ export const settings = {
 	"settings.controlNode": "Selection Control Style",
 	"settings.commonSettings.screenshotSettings.uiScale": "UI Scale",
 	"settings.commonSettings.screenshotSettings.toolbarUiScale": "Toolbar Scale",
+	"settings.toolbarPreview": "Toolbar Preview",
+	"settings.toolbarPreview.screenshotToolbar": "Screenshot Toolbar",
+	"settings.toolbarPreview.fixedContentToolbar": "Pin Drawing Toolbar",
+	"settings.toolbarPreview.actionButtons": "Action Buttons",
+	"settings.toolbarPreview.drawLock": "Drawing Lock",
+	"settings.toolbarPreview.switches": "Switches",
+	"settings.toolbarPreview.enableLockButton": "Lock Button State",
 	"settings.controlNode.circle": "Circle",
 	"settings.controlNode.polyline": "Polyline",
 	"settings.screenshotSettings": "Screenshot Settings",
@@ -641,6 +648,12 @@ export const settings = {
 		"Hot Load Page Count",
 	"settings.systemSettings.coreSettings.hotLoadPageCount.tip":
 		"Hot load pages for fast loading of pinned clipboard content to screen, video recording, fullscreen canvas, etc., but also increases memory usage",
+	"settings.systemSettings.branchFunctionSettings":
+		"Branch Switches / Experimental",
+	"settings.systemSettings.branchFunctionSettings.disableWebViewSharedBuffer":
+		"Disable WebView SharedBuffer",
+	"settings.systemSettings.branchFunctionSettings.disableWebViewSharedBuffer.tip":
+		"When enabled, WebView2 SharedBuffer transfer is disabled and screenshot/copy data transfer falls back to the normal path. Use this if WebView2 compatibility issues occur",
 	"settings.functionSettings.ocrSettings": "OCR Settings",
 	"settings.functionSettings.ocrSettings.htmlVisionModel": "Vision Model",
 	"settings.functionSettings.ocrSettings.htmlVisionModel.tip":

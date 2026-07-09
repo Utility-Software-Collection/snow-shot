@@ -3,7 +3,7 @@
 	"identifier": "com.chao.snowshot",
 	"plugins": {
 		"updater": {
-			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDMxREY5QjM4RDU5QzBBMEEKUldRS0NwelZPSnZmTVNjeWxydlZFRytwM0tZK1pkVVIzQm1rSlE4bjV3clVucGxyTXIydWZ1cW8K",
+			"pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IHJzaWduIGVuY3J5cHRlZCBzZWNyZXQga2V5ClJXUlRZMEl5VWE5cnhlVTRFZVZ5Ty91MmtxQTR5WUExOS9VMEc5TUpURjNzK296UTdEOEFBQkFBQUFBQUFBQUFBQUlBQUFBQUxka1JMQVdjck85MU9TUGQySE5ObTVhRGRNMkJvcS9ibEZ5dmVDT3Vqa3l5NTJxdWtVNWJWbnRSNnhURVorNXdZSGFTZ3pIbWF1UmJsdWZNaUN6VGY2Tll6MitKeXIrZjBucnJ4aDVoZ3RrWjhoY2ovdUVpZm9QYjFwbnQ0MElHcGtkTE8weER4UDg9Cg==",
 			"endpoints": [],
 			"windows": {
 				"installMode": "passive"
@@ -24,7 +24,7 @@
 			"digestAlgorithm": "sha256",
 			"webviewInstallMode": {
 				"type": "fixedRuntime",
-				"path": "Microsoft.WebView2.FixedVersionRuntime.130.0.2849.80.x64"
+				"path": "Microsoft.WebView2.FixedVersionRuntime.150.0.4078.48.x64"
 			},
 			"nsis": {
 				"template": "./build-configs/installer.nsi",

@@ -3,6 +3,7 @@ export const menu = {
 	"menu.screenshot": "截圖",
 	"menu.settings": "設定",
 	"menu.settings.generalSettings": "介面設定",
+	"menu.settings.toolbarPreview": "工具列預覽",
 	"menu.settings.functionSettings": "功能設定",
 	"menu.settings.hotKeySettings": "快捷鍵設定",
 	"menu.settings.systemSettings": "系統設定",

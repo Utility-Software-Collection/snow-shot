@@ -49,6 +49,13 @@ export const settings = {
 	"settings.controlNode": "选区控件样式",
 	"settings.commonSettings.screenshotSettings.uiScale": "界面缩放比例",
 	"settings.commonSettings.screenshotSettings.toolbarUiScale": "工具栏缩放比例",
+	"settings.toolbarPreview": "工具栏预览",
+	"settings.toolbarPreview.screenshotToolbar": "截图工具栏",
+	"settings.toolbarPreview.fixedContentToolbar": "贴图绘制工具栏",
+	"settings.toolbarPreview.actionButtons": "操作按钮",
+	"settings.toolbarPreview.drawLock": "绘制锁定",
+	"settings.toolbarPreview.switches": "开关",
+	"settings.toolbarPreview.enableLockButton": "锁定按钮状态",
 	"settings.controlNode.circle": "圆形",
 	"settings.controlNode.polyline": "多边形",
 	"settings.screenshotSettings": "截图",
@@ -608,6 +615,11 @@ export const settings = {
 	"settings.systemSettings.coreSettings.hotLoadPageCount": "热加载页面数量",
 	"settings.systemSettings.coreSettings.hotLoadPageCount.tip":
 		"通过热加载页面，实现贴图、视频录制、全屏画布等功能的快速加载，但同时提高了内存的占用",
+	"settings.systemSettings.branchFunctionSettings": "分支功能开关/实验功能",
+	"settings.systemSettings.branchFunctionSettings.disableWebViewSharedBuffer":
+		"禁用 WebView SharedBuffer",
+	"settings.systemSettings.branchFunctionSettings.disableWebViewSharedBuffer.tip":
+		"开启后将不使用 WebView2 SharedBuffer 共享内存通道，截图、复制等数据传输会回退到普通路径；适合遇到 WebView2 兼容问题时使用",
 	"settings.functionSettings.ocrSettings": "文本识别",
 	"settings.functionSettings.ocrSettings.htmlVisionModel": "视觉理解模型",
 	"settings.functionSettings.ocrSettings.htmlVisionModel.tip":

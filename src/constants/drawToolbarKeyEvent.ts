@@ -49,6 +49,10 @@ export const defaultDrawToolbarKeyEventSettings: Record<
 		hotKey: "7",
 		unique: true,
 	},
+	[DrawToolbarKeyEventKey.MosaicTool]: {
+		hotKey: "9",
+		unique: true,
+	},
 	[DrawToolbarKeyEventKey.EraserTool]: {
 		hotKey: "8, E",
 		unique: true,

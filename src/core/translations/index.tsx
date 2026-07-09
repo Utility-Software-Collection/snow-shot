@@ -2,6 +2,7 @@ import { trim } from "es-toolkit";
 import OpenAI from "openai";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useIntl } from "react-intl";
+import { CUSTOM_MODEL_PREFIX } from "@/constants/components/chat";
 import { defaultTranslationPrompt } from "@/constants/components/translation";
 import { AntdContext } from "@/contexts/antdContext";
 import { AppSettingsActionContext } from "@/contexts/appSettingsActionContext";
@@ -11,7 +12,6 @@ import {
 	convertLanguageCodeToDeepLSourceLanguageCode,
 	convertLanguageCodeToDeepLTargetLanguageCode,
 } from "@/pages/settings/functionSettings/extra";
-import { CUSTOM_MODEL_PREFIX } from "@/pages/tools/chat/page";
 import { getTranslationPrompt } from "@/pages/tools/translation/extra";
 import { appFetch, getUrl, type ServiceResponse } from "@/services/tools";
 import { type ChatModel, getChatModelsWithCache } from "@/services/tools/chat";

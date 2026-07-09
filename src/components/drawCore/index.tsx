@@ -34,6 +34,7 @@ import { ExcalidrawAppStateStore } from "@/utils/appStore";
 import { appWarn } from "@/utils/log";
 import { ExcalidrawKeyEventHandler } from "./components/excalidrawKeyEventHandler";
 import { useHistory } from "./components/historyContext";
+import { MeasurementTool } from "./components/measurementTool";
 import {
 	SerialNumberContextProvider,
 	SerialNumberTool,
@@ -62,6 +63,8 @@ const Excalidraw = lazy(() =>
 
 const strokeWidthList = [1, 2, 4];
 const fontSizeList = [16, 20, 28, 36];
+const mosaicFilterType = "pixelate";
+const mosaicMinStrength = 80;
 
 // 在 DrawCacheLayerCore 组件外部添加一个辅助函数
 const getNextValueInList = <T,>(
@@ -362,6 +365,7 @@ const DrawCoreComponent: React.FC<{
 				  };
 			if (
 				getDrawState() === DrawState.Blur ||
+				getDrawState() === DrawState.Mosaic ||
 				selectedElement?.type === "blur"
 			) {
 				const currentBlur =
@@ -504,18 +508,50 @@ const DrawCoreComponent: React.FC<{
 		[appStateStorageKey],
 	);
 
+	const getMosaicAppState = useCallback(
+		(appState: Partial<AppState> | undefined): Partial<AppState> => {
+			return {
+				currentItemFilterType: mosaicFilterType,
+				currentItemBlur: Math.max(
+					typeof appState?.currentItemBlur === "number"
+						? appState.currentItemBlur
+						: 0,
+					mosaicMinStrength,
+				),
+			};
+		},
+		[],
+	);
+
+	const getToolAppState = useCallback(
+		(
+			drawState: DrawState | undefined,
+			appState: Partial<AppState> | undefined,
+		): Partial<AppState> => {
+			if (drawState === DrawState.Mosaic) {
+				return getMosaicAppState(appState);
+			}
+
+			return {};
+		},
+		[getMosaicAppState],
+	);
+
 	const needSaveAppState = useCallback((drawState: DrawState) => {
 		switch (drawState) {
 			case DrawState.Rect:
 			case DrawState.Diamond:
 			case DrawState.Ellipse:
 			case DrawState.Arrow:
+			case DrawState.DimensionCalibrate:
+			case DrawState.DimensionMeasure:
 			case DrawState.Line:
 			case DrawState.Pen:
 			case DrawState.Text:
 			case DrawState.SerialNumber:
 			case DrawState.Blur:
 			case DrawState.BlurFreeDraw:
+			case DrawState.Mosaic:
 			case DrawState.Watermark:
 			case DrawState.Highlight:
 				return true;
@@ -553,18 +589,47 @@ const DrawCoreComponent: React.FC<{
 								return;
 							}
 
+							const nextAppState = {
+								...appState,
+								...(value.appState as AppState),
+							};
+
 							excalidrawAPIRef.current?.updateScene({
 								appState: {
-									...appState,
-									...(value.appState as AppState),
+									...nextAppState,
+									...getToolAppState(drawState, nextAppState),
 								},
 								captureUpdate: "NEVER",
 							});
 						})
 						.finally(() => {
+							const appState = excalidrawAPIRef.current?.getAppState();
+							const toolAppState = getToolAppState(drawState, appState);
+							if (Object.keys(toolAppState).length > 0) {
+								excalidrawAPIRef.current?.updateScene({
+									appState: {
+										...(appState ?? {}),
+										...toolAppState,
+									},
+									captureUpdate: "NEVER",
+								});
+							}
+
 							excalidrawAPIRef.current?.setActiveTool(tool, keepSelection);
 						});
 				} else {
+					const appState = excalidrawAPIRef.current?.getAppState();
+					const toolAppState = getToolAppState(drawState, appState);
+					if (Object.keys(toolAppState).length > 0) {
+						excalidrawAPIRef.current?.updateScene({
+							appState: {
+								...(appState ?? {}),
+								...toolAppState,
+							},
+							captureUpdate: "NEVER",
+						});
+					}
+
 					excalidrawAPIRef.current?.setActiveTool(tool, keepSelection);
 				}
 			},
@@ -601,6 +666,7 @@ const DrawCoreComponent: React.FC<{
 			getCanvas,
 			getCanvasContext,
 			getImageBitmap,
+			getToolAppState,
 			needSaveAppState,
 			updateScene,
 		],
@@ -865,6 +931,7 @@ const DrawCoreComponent: React.FC<{
 				{currentPlatform !== "macos" && <ExcalidrawKeyEventHandler />}
 
 				<SerialNumberTool />
+				<MeasurementTool />
 
 				<style jsx>{`
                         .draw-core-layer {

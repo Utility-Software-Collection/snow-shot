@@ -1,5 +1,6 @@
 "use client";
 
+import { GlobalOutlined, SkinOutlined } from "@ant-design/icons";
 import ProForm, {
 	ProFormRadio,
 	ProFormSelect,
@@ -26,7 +27,6 @@ import { FormattedMessage, useIntl } from "react-intl";
 import { ContentWrap } from "@/components/contentWrap";
 import { GroupTitle } from "@/components/groupTitle";
 import { IconLabel } from "@/components/iconLable";
-import { DarkModeIcon, LanguageIcon } from "@/components/icons";
 import { PathInput } from "@/components/pathInput";
 import { ResetSettingsButton } from "@/components/resetSettingsButton";
 import { getDefaultIconPath } from "@/components/trayIconLoader";
@@ -148,6 +148,10 @@ export const GeneralSettingsPage = () => {
 			{
 				label: intl.formatMessage({ id: "draw.blurTool" }),
 				value: DrawState.Blur,
+			},
+			{
+				label: intl.formatMessage({ id: "draw.mosaicTool" }),
+				value: DrawState.Mosaic,
 			},
 			{
 				label: intl.formatMessage({ id: "draw.eraserTool" }),
@@ -388,7 +392,7 @@ export const GeneralSettingsPage = () => {
 							<Form.Item
 								label={
 									<IconLabel
-										icon={<DarkModeIcon />}
+										icon={<SkinOutlined />}
 										label={<FormattedMessage id="settings.theme" />}
 									/>
 								}
@@ -403,7 +407,7 @@ export const GeneralSettingsPage = () => {
 								name="language"
 								label={
 									<IconLabel
-										icon={<LanguageIcon />}
+										icon={<GlobalOutlined />}
 										label={<FormattedMessage id="settings.language" />}
 									/>
 								}

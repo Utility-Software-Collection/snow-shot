@@ -56,6 +56,7 @@ import urlJoin from "url-join";
 import { EventListenerContext } from "@/components/eventListener";
 import { HotkeysMenu } from "@/components/hotkeysMenu";
 import { BotIcon, SidebarIcon, ThinkingIcon } from "@/components/icons";
+import { CUSTOM_MODEL_PREFIX } from "@/constants/components/chat";
 import { AntdContext } from "@/contexts/antdContext";
 import { AppContext } from "@/contexts/appContext";
 import {
@@ -301,8 +302,6 @@ const fliterErrorMessages = (messages: BubbleDataType[] | undefined) => {
 
 	return finalMessages;
 };
-
-export const CUSTOM_MODEL_PREFIX = "snow_shot_custom_";
 
 const Chat = () => {
 	const intl = useIntl();

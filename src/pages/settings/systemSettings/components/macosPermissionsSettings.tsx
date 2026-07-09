@@ -1,3 +1,4 @@
+import { ReloadOutlined } from "@ant-design/icons";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Alert, Button, List, theme } from "antd";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -12,7 +13,6 @@ import {
 } from "tauri-plugin-macos-permissions-api";
 import useInterval from "use-interval";
 import { GroupTitle } from "@/components/groupTitle";
-import { ResetIcon } from "@/components/icons";
 import { useStateRef } from "@/hooks/useStateRef";
 
 const PermissionListItem: React.FC<{
@@ -135,7 +135,7 @@ export const MacOSPermissionsSettings: React.FC = () => {
 							setRealodButtonLoading(false);
 						}}
 					>
-						<ResetIcon />
+						<ReloadOutlined />
 					</Button>
 				}
 			>

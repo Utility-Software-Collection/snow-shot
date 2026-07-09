@@ -95,6 +95,38 @@ const ArrowToolCore: React.FC<{
 		);
 	}, [disable, drawState, intl, onToolClickAction, updateLastArrowTool]);
 
+	const dimensionCalibrateButton = useMemo(() => {
+		return (
+			<Button
+				icon={<span style={{ fontWeight: 700, fontSize: "0.72em" }}>1:1</span>}
+				title={intl.formatMessage({ id: "draw.measurement.calibrate" })}
+				type={getButtonTypeByState(drawState === DrawState.DimensionCalibrate)}
+				key="dimension-calibrate"
+				onClick={() => {
+					onToolClickAction(DrawState.DimensionCalibrate);
+					updateLastArrowTool(DrawState.DimensionCalibrate);
+				}}
+				disabled={disable}
+			/>
+		);
+	}, [disable, drawState, intl, onToolClickAction, updateLastArrowTool]);
+
+	const dimensionMeasureButton = useMemo(() => {
+		return (
+			<Button
+				icon={<span style={{ fontWeight: 700, fontSize: "0.78em" }}>L</span>}
+				title={intl.formatMessage({ id: "draw.measurement.measure" })}
+				type={getButtonTypeByState(drawState === DrawState.DimensionMeasure)}
+				key="dimension-measure"
+				onClick={() => {
+					onToolClickAction(DrawState.DimensionMeasure);
+					updateLastArrowTool(DrawState.DimensionMeasure);
+				}}
+				disabled={disable}
+			/>
+		);
+	}, [disable, drawState, intl, onToolClickAction, updateLastArrowTool]);
+
 	let mainToolbarButton: React.ReactNode = customToolbarToolHiddenMap?.[
 		DrawState.Arrow
 	]
@@ -110,6 +142,10 @@ const ArrowToolCore: React.FC<{
 		!customToolbarToolHiddenMap?.[DrawState.Line]
 	) {
 		mainToolbarButton = lineButton;
+	} else if (lastArrowTool === DrawState.DimensionCalibrate) {
+		mainToolbarButton = dimensionCalibrateButton;
+	} else if (lastArrowTool === DrawState.DimensionMeasure) {
+		mainToolbarButton = dimensionMeasureButton;
 	}
 
 	if (
@@ -131,6 +167,8 @@ const ArrowToolCore: React.FC<{
 				<Flex align="center" gap={token.paddingXS} className="popover-toolbar">
 					{arrowButton}
 					{!customToolbarToolHiddenMap?.[DrawState.Line] && lineButton}
+					{dimensionCalibrateButton}
+					{dimensionMeasureButton}
 				</Flex>
 			}
 		>

@@ -1,10 +1,10 @@
+import { ApiOutlined } from "@ant-design/icons";
 import { ModalForm } from "@ant-design/pro-form";
 import { Alert, Spin, theme } from "antd";
 import OpenAI from "openai";
 import type React from "react";
 import { useCallback, useState } from "react";
 import { FormattedMessage } from "react-intl";
-import { TestChatIcon } from "@/components/icons";
 import { AppSettingsPublisher } from "@/contexts/appSettingsActionContext";
 import { useStateSubscriber } from "@/hooks/useStateSubscriber";
 import { appFetch } from "@/services/tools";
@@ -57,7 +57,7 @@ export const TestChat: React.FC<{ config: ChatApiConfig }> = ({ config }) => {
 					onClick={handleTest}
 					className="anticon ant-pro-form-list-action-icon"
 				>
-					<TestChatIcon />
+					<ApiOutlined />
 				</span>
 			}
 			onFinish={async () => {

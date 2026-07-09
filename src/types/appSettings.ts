@@ -121,6 +121,7 @@ export enum AppSettingsGroup {
 	FunctionVideoRecord = "functionVideoRecord",
 	FunctionTrayIcon = "functionTrayIcon",
 	FunctionGlobalShortcut = "functionGlobalShortcut",
+	FunctionBranch = "functionBranch",
 }
 
 export enum ShortcutKeyStatus {
@@ -301,6 +302,8 @@ export type AppSettingsData = {
 		disableAnimation: boolean;
 		/** 隐藏工具栏工具 */
 		toolbarHiddenToolList: DrawState[];
+		/** 工具栏工具顺序 */
+		toolbarToolOrder: DrawState[];
 	};
 	[AppSettingsGroup.FixedContent]: {
 		/** 边框颜色 */
@@ -350,6 +353,12 @@ export type AppSettingsData = {
 		lastRectTool: DrawState;
 		// 记录上一次使用的箭头工具
 		lastArrowTool: DrawState;
+		/** 尺寸标注校准像素长度 */
+		measurementScalePixels: number;
+		/** 尺寸标注校准真实长度 */
+		measurementScaleValue: number;
+		/** 尺寸标注单位 */
+		measurementScaleUnit: string;
 		// 记录上一次使用的滤镜工具
 		lastFilterTool: DrawState;
 		// 记录上一次使用的额外工具
@@ -588,6 +597,10 @@ export type AppSettingsData = {
 		/** 全屏窗口被聚焦时禁用全局快捷键 */
 		disableOnFocusedFullScreenWindow: boolean;
 	};
+	[AppSettingsGroup.FunctionBranch]: {
+		/** 禁用 WebView SharedBuffer */
+		disableWebViewSharedBuffer: boolean;
+	};
 };
 
 export const CanHiddenToolSet: Set<DrawState> = new Set([
@@ -599,6 +612,7 @@ export const CanHiddenToolSet: Set<DrawState> = new Set([
 	DrawState.SerialNumber,
 	DrawState.Blur,
 	DrawState.BlurFreeDraw,
+	DrawState.Mosaic,
 	DrawState.Watermark,
 	DrawState.Highlight,
 	DrawState.Eraser,

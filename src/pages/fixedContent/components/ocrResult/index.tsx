@@ -15,6 +15,7 @@ import {
 import { FormattedMessage, useIntl } from "react-intl";
 import { ocrDetect, ocrDetectWithSharedBuffer } from "@/commands/ocr";
 import { createWebViewSharedBufferChannel } from "@/commands/webview";
+import { CUSTOM_MODEL_PREFIX } from "@/constants/components/chat";
 import { PLUGIN_ID_RAPID_OCR } from "@/constants/pluginService";
 import { AntdContext } from "@/contexts/antdContext";
 import { AppContext } from "@/contexts/appContext";
@@ -25,15 +26,15 @@ import { releaseOcrSession } from "@/functions/ocr";
 import { useHotkeysApp } from "@/hooks/useHotkeysApp";
 import { useStateRef } from "@/hooks/useStateRef";
 import { useStateSubscriber } from "@/hooks/useStateSubscriber";
+import { useVisionModelList } from "@/hooks/useVisionModelList";
 import type { OcrBlocksSelectedText } from "@/pages/draw/components/ocrBlocks";
 import {
 	type CaptureBoundingBoxInfo,
 	ElementDraggingPublisher,
 } from "@/pages/draw/extra";
-import { CUSTOM_MODEL_PREFIX, MarkdownContent } from "@/pages/tools/chat/page";
-import { appFetch, getUrl } from "@/services/tools";
-import { getChatModelsWithCache } from "@/services/tools/chat";
-import { AppSettingsGroup, type ChatApiConfig } from "@/types/appSettings";
+import { MarkdownContent } from "@/pages/tools/chat/page";
+import { appFetch } from "@/services/tools";
+import { AppSettingsGroup } from "@/types/appSettings";
 import type { OcrDetectResult } from "@/types/commands/ocr";
 import type { ElementRect } from "@/types/commands/screenshot";
 import { writeHtmlToClipboard, writeTextToClipboard } from "@/utils/clipboard";
@@ -103,60 +104,6 @@ export enum OcrResultType {
 	VisionModelHtml = "visionModelHtml",
 	VisionModelMarkdown = "visionModelMarkdown",
 }
-
-export type VisionModel = {
-	config: ChatApiConfig;
-	isOfficial: boolean;
-};
-
-export const useVisionModelList = () => {
-	const [getAppSettings] = useStateSubscriber(AppSettingsPublisher, undefined);
-
-	const customVisionModelListRef = useRef<VisionModel[]>(undefined);
-	const getVisionModelList = useCallback(async () => {
-		const settings = getAppSettings();
-		const visionModelList = settings[
-			AppSettingsGroup.FunctionChat
-		].chatApiConfigList
-			.filter((config) => config.support_vision)
-			.map((config) => {
-				return {
-					config: {
-						...config,
-						api_model: `${CUSTOM_MODEL_PREFIX}${config.api_model}`,
-					},
-					isOfficial: false,
-				};
-			});
-
-		if (!customVisionModelListRef.current) {
-			const res = await getChatModelsWithCache();
-			customVisionModelListRef.current = (res ?? [])
-				.filter((item) => item.support_vision)
-				.map((item) => {
-					return {
-						config: {
-							api_uri: getUrl("api/v1/"),
-							api_key: "",
-							api_model: item.model,
-							model_name: item.name,
-							support_thinking: item.thinking,
-							support_vision: item.support_vision,
-						},
-						isOfficial: true,
-					};
-				});
-		}
-
-		return [...visionModelList, ...customVisionModelListRef.current];
-	}, [getAppSettings]);
-
-	return useMemo(() => {
-		return {
-			getVisionModelList,
-		};
-	}, [getVisionModelList]);
-};
 
 export const OcrResult: React.FC<{
 	zIndex: number;

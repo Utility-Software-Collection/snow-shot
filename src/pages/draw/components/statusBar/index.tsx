@@ -311,6 +311,7 @@ const StatusBar: React.FC = () => {
 			drawState === DrawState.Rect ||
 			drawState === DrawState.Ellipse ||
 			drawState === DrawState.Blur ||
+			drawState === DrawState.Mosaic ||
 			drawState === DrawState.Diamond
 		) {
 			items.push({
@@ -357,6 +358,7 @@ const StatusBar: React.FC = () => {
 			drawState === DrawState.SerialNumber ||
 			drawState === DrawState.Blur ||
 			drawState === DrawState.BlurFreeDraw ||
+			drawState === DrawState.Mosaic ||
 			drawState === DrawState.Highlight
 		) {
 			items.push({

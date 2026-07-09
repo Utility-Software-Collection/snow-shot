@@ -24,6 +24,7 @@ import {
 	CircleIcon,
 	DragWindowIcon,
 	EraserIcon,
+	MosaicIcon,
 	PenIcon,
 	SerialNumberIcon,
 	TextIcon,
@@ -313,6 +314,16 @@ export const FixedContentCoreDrawToolbar: React.FC<{
 				case DrawState.SerialNumber:
 					break;
 				case DrawState.Blur:
+					drawCoreAction?.setActiveTool(
+						{
+							type: "blur",
+							locked: toolLocked,
+						},
+						undefined,
+						next,
+					);
+					break;
+				case DrawState.Mosaic:
 					drawCoreAction?.setActiveTool(
 						{
 							type: "blur",
@@ -653,6 +664,17 @@ export const FixedContentCoreDrawToolbar: React.FC<{
 						customToolbarToolHiddenMap={undefined}
 						onToolClickAction={onToolClick}
 						disable={false}
+					/>
+
+					{/* 打码 */}
+					<ToolButton
+						componentKey={DrawToolbarKeyEventKey.MosaicTool}
+						icon={<MosaicIcon style={{ fontSize: "1em" }} />}
+						drawState={DrawState.Mosaic}
+						buttonProps={toolButtonProps}
+						onClick={() => {
+							onToolClick(DrawState.Mosaic);
+						}}
 					/>
 
 					{/* 橡皮擦 */}

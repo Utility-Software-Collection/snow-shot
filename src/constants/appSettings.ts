@@ -33,6 +33,7 @@ import { defaultCommonKeyEventSettings } from "./commonKeyEvent";
 import { FOCUS_WINDOW_APP_NAME_ENV_VARIABLE } from "./components/chat";
 import { defaultTranslationPrompt } from "./components/translation";
 import { defaultDrawToolbarKeyEventSettings } from "./drawToolbarKeyEvent";
+import { defaultScreenshotToolbarToolOrder } from "./toolbarToolOrder";
 
 export const defaultAppSettingsData: AppSettingsData = {
 	[AppSettingsGroup.Common]: {
@@ -68,6 +69,7 @@ export const defaultAppSettingsData: AppSettingsData = {
 		hotKeyTipOpacity: 100,
 		colorPickerCenterAuxiliaryLineColor: "#00000000",
 		toolbarHiddenToolList: [],
+		toolbarToolOrder: defaultScreenshotToolbarToolOrder,
 	},
 	[AppSettingsGroup.FixedContent]: {
 		borderColor: "#dbdbdb",
@@ -105,6 +107,9 @@ export const defaultAppSettingsData: AppSettingsData = {
 		selectRectShadowColor: "#595959",
 		lastRectTool: DrawState.Rect,
 		lastArrowTool: DrawState.Arrow,
+		measurementScalePixels: 0,
+		measurementScaleValue: 0,
+		measurementScaleUnit: "px",
 		lastFilterTool: DrawState.Blur,
 		lastExtraTool: ExtraToolList.None,
 		lastDrawExtraTool: DrawState.Idle,
@@ -333,5 +338,8 @@ Priority order (highest to lowest):
 	},
 	[AppSettingsGroup.FunctionGlobalShortcut]: {
 		disableOnFocusedFullScreenWindow: false,
+	},
+	[AppSettingsGroup.FunctionBranch]: {
+		disableWebViewSharedBuffer: false,
 	},
 };

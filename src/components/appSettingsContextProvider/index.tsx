@@ -23,6 +23,7 @@ import { defaultAppSettingsData } from "@/constants/appSettings";
 import { defaultCommonKeyEventSettings } from "@/constants/commonKeyEvent";
 import { defaultDrawToolbarKeyEventSettings } from "@/constants/drawToolbarKeyEvent";
 import { PLUGIN_ID_RAPID_OCR } from "@/constants/pluginService";
+import { normalizeToolbarToolOrder } from "@/constants/toolbarToolOrder";
 import { AppContext } from "@/contexts/appContext";
 import {
 	AppSettingsActionContext,
@@ -385,6 +386,21 @@ const AppSettingsContextProviderCore: React.FC<{
 						typeof newSettings?.lastArrowTool === "number"
 							? newSettings.lastArrowTool
 							: (prevSettings?.lastArrowTool ?? DrawState.Arrow),
+					measurementScalePixels:
+						typeof newSettings?.measurementScalePixels === "number"
+							? Math.max(newSettings.measurementScalePixels, 0)
+							: (prevSettings?.measurementScalePixels ??
+								defaultAppSettingsData[group].measurementScalePixels),
+					measurementScaleValue:
+						typeof newSettings?.measurementScaleValue === "number"
+							? Math.max(newSettings.measurementScaleValue, 0)
+							: (prevSettings?.measurementScaleValue ??
+								defaultAppSettingsData[group].measurementScaleValue),
+					measurementScaleUnit:
+						typeof newSettings?.measurementScaleUnit === "string"
+							? newSettings.measurementScaleUnit
+							: (prevSettings?.measurementScaleUnit ??
+								defaultAppSettingsData[group].measurementScaleUnit),
 					lastFilterTool:
 						typeof newSettings?.lastFilterTool === "number"
 							? newSettings.lastFilterTool
@@ -492,6 +508,11 @@ const AppSettingsContextProviderCore: React.FC<{
 							? newSettings.toolbarHiddenToolList
 							: (prevSettings?.toolbarHiddenToolList ??
 								defaultAppSettingsData[group].toolbarHiddenToolList),
+					toolbarToolOrder: normalizeToolbarToolOrder(
+						newSettings?.toolbarToolOrder ??
+							prevSettings?.toolbarToolOrder ??
+							defaultAppSettingsData[group].toolbarToolOrder,
+					),
 				};
 			} else if (group === AppSettingsGroup.FunctionDraw) {
 				newSettings = newSettings as AppSettingsData[typeof group];
@@ -1392,6 +1413,19 @@ const AppSettingsContextProviderCore: React.FC<{
 							? newSettings.disableOnFocusedFullScreenWindow
 							: (prevSettings?.disableOnFocusedFullScreenWindow ??
 								defaultAppSettingsData[group].disableOnFocusedFullScreenWindow),
+				};
+			} else if (group === AppSettingsGroup.FunctionBranch) {
+				newSettings = newSettings as AppSettingsData[typeof group];
+				const prevSettings = appSettingsRef.current[group] as
+					| AppSettingsData[typeof group]
+					| undefined;
+
+				settings = {
+					disableWebViewSharedBuffer:
+						typeof newSettings?.disableWebViewSharedBuffer === "boolean"
+							? newSettings.disableWebViewSharedBuffer
+							: (prevSettings?.disableWebViewSharedBuffer ??
+								defaultAppSettingsData[group].disableWebViewSharedBuffer),
 				};
 			} else {
 				return defaultAppSettingsData[group];

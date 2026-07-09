@@ -26,6 +26,8 @@ import {
 } from "antd";
 import type { AggregationColor } from "antd/es/color-picker/color";
 import {
+	lazy,
+	Suspense,
 	useCallback,
 	useContext,
 	useEffect,
@@ -57,7 +59,7 @@ import { AppSettingsActionContext } from "@/contexts/appSettingsActionContext";
 import { usePluginServiceContext } from "@/contexts/pluginServiceContext";
 import { useAppSettingsLoad } from "@/hooks/useAppSettingsLoad";
 import { usePlatform } from "@/hooks/usePlatform";
-import { useVisionModelList } from "@/pages/fixedContent/components/ocrResult";
+import { useVisionModelList } from "@/hooks/useVisionModelList";
 import {
 	type AppSettingsData,
 	AppSettingsFixedContentInitialPosition,
@@ -81,8 +83,17 @@ import {
 	getImageSaveDirectory,
 	getVideoRecordSaveDirectory,
 } from "@/utils/file";
-import { TestChat } from "./components/testChat";
-import { TranslationConfig } from "./components/translationConfig";
+
+const LazyTestChat = lazy(() =>
+	import("./components/testChat").then((module) => ({
+		default: module.TestChat,
+	})),
+);
+const LazyTranslationConfig = lazy(() =>
+	import("./components/translationConfig").then((module) => ({
+		default: module.TranslationConfig,
+	})),
+);
 
 export const FunctionSettingsPage = () => {
 	const intl = useIntl();
@@ -470,6 +481,12 @@ export const FunctionSettingsPage = () => {
 					id: "draw.blurTool",
 				}),
 				value: DrawState.Blur,
+			},
+			{
+				label: intl.formatMessage({
+					id: "draw.mosaicTool",
+				}),
+				value: DrawState.Mosaic,
 			},
 		];
 	}, [intl]);
@@ -1472,7 +1489,9 @@ export const FunctionSettingsPage = () => {
 					</GroupTitle>
 
 					<Spin spinning={appSettingsLoading}>
-						<TranslationConfig />
+						<Suspense fallback={<Spin size="small" />}>
+							<LazyTranslationConfig />
+						</Suspense>
 
 						<ProForm
 							form={translationForm}
@@ -1849,14 +1868,15 @@ export const FunctionSettingsPage = () => {
 											const [field, , defaultActionDom] = params;
 											return [
 												defaultActionDom,
-												<TestChat
-													key="test-chat"
-													config={
-														functionForm.getFieldValue("chatApiConfigList")[
-															field.name
-														]
-													}
-												/>,
+												<Suspense key="test-chat" fallback={null}>
+													<LazyTestChat
+														config={
+															functionForm.getFieldValue("chatApiConfigList")[
+																field.name
+															]
+														}
+													/>
+												</Suspense>,
 											];
 										}}
 										className="api-config-list"
