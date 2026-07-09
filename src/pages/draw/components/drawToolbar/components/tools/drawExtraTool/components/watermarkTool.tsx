@@ -68,6 +68,7 @@ export const defaultWatermarkProps = {
 	opacity: 0,
 	visible: false,
 	text: "",
+	parseTextAsDate: false,
 	selectRectParams: {
 		rect: {
 			min_x: 0,
@@ -87,7 +88,8 @@ const isEqualWatermarkProps = (a: WatermarkProps, b: WatermarkProps) => {
 		a.opacity === b.opacity &&
 		a.visible === b.visible &&
 		a.color === b.color &&
-		a.text === b.text
+		a.text === b.text &&
+		a.parseTextAsDate === b.parseTextAsDate
 	);
 };
 
@@ -159,6 +161,8 @@ export const WatermarkTool = () => {
 			}
 
 			const sceneElements = excalidrawAPI.getSceneElements();
+			const parseTextAsDate =
+				getAppSettings()[AppSettingsGroup.Cache].parseWatermarkTextAsDate;
 
 			let targetProps: WatermarkProps;
 			const watermarkElement = sceneElements.find(
@@ -172,6 +176,7 @@ export const WatermarkTool = () => {
 						opacity: appState.currentItemOpacity,
 						visible: true,
 						text: watermarkElement.watermarkText,
+						parseTextAsDate,
 						selectRectParams,
 					};
 				} else {
@@ -181,6 +186,7 @@ export const WatermarkTool = () => {
 						opacity: watermarkElement.opacity,
 						visible: true,
 						text: watermarkElement.watermarkText,
+						parseTextAsDate,
 						selectRectParams,
 					};
 				}
@@ -215,9 +221,24 @@ export const WatermarkTool = () => {
 			watermarkPropsRef.current = targetProps;
 			imageLayerAction.updateWatermarkSprite(watermarkPropsRef.current);
 		},
-		[getDrawCoreAction, getImageLayerAction, getSelectRectParams],
+		[
+			getAppSettings,
+			getDrawCoreAction,
+			getImageLayerAction,
+			getSelectRectParams,
+		],
 	);
 	const updateWatermark = useCallbackRender(updateWatermarkCore);
+
+	useStateSubscriber(
+		AppSettingsPublisher,
+		useCallback(() => {
+			const appState = getDrawCoreAction()?.getAppState();
+			if (appState) {
+				updateWatermark(appState);
+			}
+		}, [getDrawCoreAction, updateWatermark]),
+	);
 
 	// watermark 的样式
 	// 样式发生变化时，则可能需要重新创建 watermark element

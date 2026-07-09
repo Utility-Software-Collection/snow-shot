@@ -679,6 +679,15 @@ export const GeneralSettingsPage = () => {
 								<ColorPicker showText placement="bottom" />
 							</ProForm.Item>
 						</Col>
+
+						<Col span={12}>
+							<ProFormSwitch
+								name="colorPickerHexIncludeHash"
+								label={
+									<FormattedMessage id="settings.functionSettings.screenshotSettings.colorPickerHexIncludeHash" />
+								}
+							/>
+						</Col>
 					</Row>
 
 					<Row gutter={token.marginLG}>

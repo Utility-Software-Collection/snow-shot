@@ -205,6 +205,8 @@ export const settings = {
 		"始终显示",
 	"settings.functionSettings.screenshotSettings.neverShowColorPicker":
 		"始终隐藏",
+	"settings.functionSettings.screenshotSettings.colorPickerHexIncludeHash":
+		"复制 HEX 颜色时包含 #",
 	"settings.functionSettings.screenshotSettings.beyondSelectRectElementOpacity":
 		"超出选区范围的元素透明度",
 	"settings.functionSettings.screenshotSettings.beyondSelectRectElementOpacity.tip":
@@ -317,6 +319,8 @@ export const settings = {
 	"settings.functionSettings.videoRecordSettings.enableExcludeFromCapture":
 		"录制画面中隐藏工具栏",
 	"settings.functionSettings.videoRecordSettings.gifFrameRate": "动图帧率",
+	"settings.functionSettings.videoRecordSettings.gifFrameRate.tip":
+		"支持 1-120 fps。非常见帧率可能导致文件体积变大或部分软件播放不兼容",
 	"settings.functionSettings.videoRecordSettings.enableApngFormat":
 		"启用 APNG 格式",
 	"settings.functionSettings.videoRecordSettings.gifFormat": "动图格式",

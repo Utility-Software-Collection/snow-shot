@@ -429,8 +429,13 @@ const ColorPickerCore: React.FC<{
 				] ?? ColorPickerColorFormat.HEX;
 
 			switch (colorFormatIndex) {
-				case ColorPickerColorFormat.HEX:
-					return currentColor.hex().toString();
+				case ColorPickerColorFormat.HEX: {
+					const hexColor = currentColor.hex().toString();
+					return getAppSettings()[AppSettingsGroup.Screenshot]
+						.colorPickerHexIncludeHash
+						? hexColor
+						: hexColor.replace(/^#/, "");
+				}
 				case ColorPickerColorFormat.HSL: {
 					const hsl = currentColor.hsl();
 					return `hsl(${hsl.hue().toFixed(1)}, ${hsl.saturationl().toFixed(1)}%, ${hsl.lightness().toFixed(1)}%)`;
@@ -851,15 +856,19 @@ const ColorPickerCore: React.FC<{
 				Math.round(mousePosition.mouseY * window.devicePixelRatio),
 			);
 
-			return Color({
+			const hexColor = Color({
 				r: color.color[0],
 				g: color.color[1],
 				b: color.color[2],
 			})
 				.hex()
 				.toString();
+			return getAppSettings()[AppSettingsGroup.Screenshot]
+				.colorPickerHexIncludeHash
+				? hexColor
+				: hexColor.replace(/^#/, "");
 		},
-		[renderWorker],
+		[getAppSettings, renderWorker],
 	);
 
 	useImperativeHandle(

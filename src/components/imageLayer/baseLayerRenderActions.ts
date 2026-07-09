@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import type { Application, ApplicationOptions } from "pixi.js";
 import * as PIXI from "pixi.js";
 import * as PIXIFilters from "pixi-filters";
@@ -1041,11 +1042,50 @@ export type WatermarkProps = {
 	color: string;
 	opacity: number;
 	text: string;
+	parseTextAsDate: boolean;
 	visible: boolean;
 };
 
 const watermarkTextRotateAngle = Math.PI * (45 / 180);
 const watermarkTextPadding = 32;
+const watermarkDateTemplateRegex = /\{\{([^}]+)\}\}/g;
+const watermarkPlainDateTemplateRegex = /^[yYMDdHhmsaA\-_:/.\\\s]+$/;
+
+const normalizeWatermarkDateTemplate = (template: string) => {
+	const normalizedTemplate = template
+		.replace(/yyyy/g, "YYYY")
+		.replace(/YYYY/g, "YYYY")
+		.replace(/dd/g, "DD");
+
+	return normalizedTemplate.replace(
+		/YYYY([-_:/.\s])mm(?=[-_:/.\s]DD)/g,
+		"YYYY$1MM",
+	);
+};
+
+const formatWatermarkText = (text: string, parseTextAsDate: boolean) => {
+	if (!parseTextAsDate) {
+		return text;
+	}
+
+	const formatTemplate = (template: string) => {
+		return dayjs().format(normalizeWatermarkDateTemplate(template));
+	};
+
+	if (watermarkDateTemplateRegex.test(text)) {
+		watermarkDateTemplateRegex.lastIndex = 0;
+		return text.replace(watermarkDateTemplateRegex, (_, template: string) =>
+			formatTemplate(template),
+		);
+	}
+	watermarkDateTemplateRegex.lastIndex = 0;
+
+	if (watermarkPlainDateTemplateRegex.test(text)) {
+		return formatTemplate(text);
+	}
+
+	return text;
+};
 
 const getWatermarkSpriteAlpha = (opacity: number) => {
 	return (opacity / 100) * 0.24;
@@ -1097,14 +1137,22 @@ export const renderUpdateWatermarkSpriteAction = (
 
 	const { rect: selectRect } = selectRectParams;
 
+	const displayWatermarkText = formatWatermarkText(
+		watermarkProps.text,
+		watermarkProps.parseTextAsDate,
+	);
+	const watermarkSpriteWithCache = watermarkSprite as PIXI.TilingSprite & {
+		renderedWatermarkText?: string;
+	};
+
 	if (
-		lastWatermarkPropsRef.current.text !== watermarkProps.text ||
+		watermarkSpriteWithCache.renderedWatermarkText !== displayWatermarkText ||
 		lastWatermarkPropsRef.current.fontSize !== watermarkProps.fontSize ||
 		lastWatermarkPropsRef.current.color !== watermarkProps.color
 	) {
 		const textContainer = new PIXI.Container();
 		const textSource = new PIXI.Text({
-			text: watermarkProps.text,
+			text: displayWatermarkText,
 			style: {
 				fontSize: watermarkProps.fontSize,
 				stroke: {
@@ -1142,6 +1190,7 @@ export const renderUpdateWatermarkSpriteAction = (
 
 		const textTexture = canvasApp.renderer.extract.texture(textContainer);
 		watermarkSprite.texture = textTexture;
+		watermarkSpriteWithCache.renderedWatermarkText = displayWatermarkText;
 	}
 
 	if (lastWatermarkPropsRef.current.opacity !== watermarkProps.opacity) {
@@ -1198,6 +1247,7 @@ export const renderClearContextAction = (
 		opacity: 0,
 		visible: false,
 		text: "",
+		parseTextAsDate: false,
 		selectRectParams: {
 			rect: { min_x: 0, min_y: 0, max_x: 0, max_y: 0 },
 			radius: 0,

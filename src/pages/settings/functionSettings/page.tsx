@@ -2193,26 +2193,25 @@ export const FunctionSettingsPage = () => {
 							</Col>
 
 							<Col span={12}>
-								<ProFormSelect
+								<ProFormDigit
 									name="gifFrameRate"
 									layout="horizontal"
 									label={
-										<FormattedMessage id="settings.functionSettings.videoRecordSettings.gifFrameRate" />
+										<IconLabel
+											label={
+												<FormattedMessage id="settings.functionSettings.videoRecordSettings.gifFrameRate" />
+											}
+											tooltipTitle={
+												<FormattedMessage id="settings.functionSettings.videoRecordSettings.gifFrameRate.tip" />
+											}
+										/>
 									}
-									options={[
-										{
-											label: "10",
-											value: 10,
-										},
-										{
-											label: "15",
-											value: 15,
-										},
-										{
-											label: "24",
-											value: 24,
-										},
-									]}
+									min={1}
+									max={120}
+									fieldProps={{
+										precision: 0,
+										addonAfter: "fps",
+									}}
 								/>
 							</Col>
 

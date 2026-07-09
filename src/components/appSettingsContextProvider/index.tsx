@@ -409,6 +409,11 @@ const AppSettingsContextProviderCore: React.FC<{
 						typeof newSettings?.lastWatermarkText === "string"
 							? newSettings.lastWatermarkText
 							: (prevSettings?.lastWatermarkText ?? ""),
+					parseWatermarkTextAsDate:
+						typeof newSettings?.parseWatermarkTextAsDate === "boolean"
+							? newSettings.parseWatermarkTextAsDate
+							: (prevSettings?.parseWatermarkTextAsDate ??
+								defaultAppSettingsData[group].parseWatermarkTextAsDate),
 					lastExtraTool:
 						typeof newSettings?.lastExtraTool === "number"
 							? newSettings.lastExtraTool
@@ -503,6 +508,11 @@ const AppSettingsContextProviderCore: React.FC<{
 							? newSettings.colorPickerCenterAuxiliaryLineColor
 							: (prevSettings?.colorPickerCenterAuxiliaryLineColor ??
 								"#00000000"),
+					colorPickerHexIncludeHash:
+						typeof newSettings?.colorPickerHexIncludeHash === "boolean"
+							? newSettings.colorPickerHexIncludeHash
+							: (prevSettings?.colorPickerHexIncludeHash ??
+								defaultAppSettingsData[group].colorPickerHexIncludeHash),
 					toolbarHiddenToolList:
 						typeof newSettings?.toolbarHiddenToolList === "object"
 							? newSettings.toolbarHiddenToolList
@@ -1239,7 +1249,7 @@ const AppSettingsContextProviderCore: React.FC<{
 								defaultAppSettingsData[group].videoMaxSize),
 					gifFrameRate:
 						typeof newSettings?.gifFrameRate === "number"
-							? Math.min(Math.max(newSettings.gifFrameRate, 1), 24)
+							? Math.min(Math.max(newSettings.gifFrameRate, 1), 120)
 							: (prevSettings?.gifFrameRate ??
 								defaultAppSettingsData[group].gifFrameRate),
 					gifMaxSize:

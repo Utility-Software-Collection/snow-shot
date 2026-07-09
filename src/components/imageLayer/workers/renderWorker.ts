@@ -80,6 +80,7 @@ const lastWatermarkPropsRef: RefWrap<WatermarkProps> = {
 		opacity: 0,
 		visible: false,
 		text: "",
+		parseTextAsDate: false,
 		selectRectParams: {
 			rect: {
 				min_x: 0,

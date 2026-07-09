@@ -383,7 +383,7 @@ export const ToolbarPreviewSettingsPage = () => {
 				item.value === DrawState.OcrDetect ||
 				item.value === DrawState.OcrTranslate
 			) {
-				return isReadyStatus(PLUGIN_ID_RAPID_OCR);
+				return isReadyStatus?.(PLUGIN_ID_RAPID_OCR) ?? false;
 			}
 
 			return true;
@@ -528,15 +528,15 @@ export const ToolbarPreviewSettingsPage = () => {
 				drawState: DrawState.Fixed,
 			},
 			!isToolHidden(DrawState.OcrDetect) &&
-				isReadyStatus(PLUGIN_ID_RAPID_OCR) && {
+				(isReadyStatus?.(PLUGIN_ID_RAPID_OCR) ?? false) && {
 					key: "ocr-detect",
 					label: intl.formatMessage({ id: "draw.ocrDetectTool" }),
 					icon: glyphIcon("OCR", { fontSize: "0.58em", width: "2.2em" }),
 					drawState: DrawState.OcrDetect,
 				},
 			!isToolHidden(DrawState.OcrTranslate) &&
-				isReadyStatus(PLUGIN_ID_RAPID_OCR) &&
-				isReadyStatus(PLUGIN_ID_TRANSLATE) && {
+				(isReadyStatus?.(PLUGIN_ID_RAPID_OCR) ?? false) &&
+				(isReadyStatus?.(PLUGIN_ID_TRANSLATE) ?? false) && {
 					key: "ocr-translate",
 					label: intl.formatMessage({ id: "draw.ocrTranslateTool" }),
 					icon: glyphIcon("TR", { fontSize: "0.68em", width: "1.8em" }),

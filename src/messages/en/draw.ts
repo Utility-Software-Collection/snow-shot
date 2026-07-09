@@ -166,6 +166,9 @@ export const draw = {
 	"draw.scrollAction.rotateY": "Rotate Y",
 	"draw.scrollAction.rotateZ": "Rotate Z",
 	"draw.watermarkTool.text": "Watermark Text",
+	"draw.watermarkTool.text.placeholder":
+		"When date parsing is on: {{yyyy-mm-dd HH:mm:ss}} Alice",
+	"draw.watermarkTool.parseTextAsDate": "Parse as date/time",
 	"draw.pickColor": "Pick Color",
 	"draw.color": "Color",
 	"draw.filterType.blur": "Blur",

@@ -298,6 +298,8 @@ export type AppSettingsData = {
 		monitorCenterAuxiliaryLineColor: string;
 		/** 颜色选择器中心辅助线颜色 */
 		colorPickerCenterAuxiliaryLineColor: string;
+		/** 颜色拾取器复制 HEX 时包含 # */
+		colorPickerHexIncludeHash: boolean;
 		/** 禁用动画 */
 		disableAnimation: boolean;
 		/** 隐藏工具栏工具 */
@@ -367,6 +369,8 @@ export type AppSettingsData = {
 		lastDrawExtraTool: DrawState;
 		// 上一次水印内容
 		lastWatermarkText: string;
+		/** 水印文本是否解析为日期时间模板 */
+		parseWatermarkTextAsDate: boolean;
 		/** 延迟截图秒数 */
 		delayScreenshotSeconds: number;
 		/** 锁定手动选区时的宽高比 */

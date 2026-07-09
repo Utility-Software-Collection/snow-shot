@@ -605,10 +605,10 @@ const DrawCoreComponent: React.FC<{
 						.finally(() => {
 							const appState = excalidrawAPIRef.current?.getAppState();
 							const toolAppState = getToolAppState(drawState, appState);
-							if (Object.keys(toolAppState).length > 0) {
+							if (appState && Object.keys(toolAppState).length > 0) {
 								excalidrawAPIRef.current?.updateScene({
 									appState: {
-										...(appState ?? {}),
+										...appState,
 										...toolAppState,
 									},
 									captureUpdate: "NEVER",
@@ -620,10 +620,10 @@ const DrawCoreComponent: React.FC<{
 				} else {
 					const appState = excalidrawAPIRef.current?.getAppState();
 					const toolAppState = getToolAppState(drawState, appState);
-					if (Object.keys(toolAppState).length > 0) {
+					if (appState && Object.keys(toolAppState).length > 0) {
 						excalidrawAPIRef.current?.updateScene({
 							appState: {
-								...(appState ?? {}),
+								...appState,
 								...toolAppState,
 							},
 							captureUpdate: "NEVER",

@@ -156,6 +156,9 @@ export const draw = {
 	"draw.scrollAction.rotateY": "Y 軸旋轉",
 	"draw.scrollAction.rotateZ": "Z 軸旋轉",
 	"draw.watermarkTool.text": "浮水印文字",
+	"draw.watermarkTool.text.placeholder":
+		"開啟日期解析後可用：{{yyyy-mm-dd HH:mm:ss}} 張三",
+	"draw.watermarkTool.parseTextAsDate": "解析為日期時間",
 	"draw.pickColor": "拾取顏色",
 	"draw.color": "顏色",
 	"draw.filterType.blur": "模糊",

@@ -108,8 +108,9 @@ const createMeasurementTextElement = (
 		y: position[1] - height - 8,
 		width,
 		height,
-		angle: 0,
+		angle: 0 as ExcalidrawTextElement["angle"],
 		textStrokeColor: "transparent",
+		textStrokeWidth: appState.currentItemTextStrokeWidth,
 		textBackgroundColor: "transparent",
 		strokeColor: appState.currentItemStrokeColor,
 		backgroundColor: "transparent",
@@ -134,6 +135,7 @@ const createMeasurementTextElement = (
 		verticalAlign: "middle",
 		containerId: null,
 		originalText: text,
+		textSerialNumberType: appState.currentItemTextSerialNumberType,
 		autoResize: false,
 		lineHeight: 1.25 as ExcalidrawTextElement["lineHeight"],
 		seed: Math.floor(Math.random() * 1_000_000_000),
@@ -241,7 +243,9 @@ export const MeasurementTool: React.FC = () => {
 						}
 
 						return {
-							...element,
+							...(element as ExcalidrawLinearElement),
+							startArrowhead: "arrow" as const,
+							endArrowhead: "arrow" as const,
 							groupIds: [...element.groupIds, groupId],
 							version: element.version + 1,
 							updated: Date.now(),

@@ -215,6 +215,8 @@ export const settings = {
 		"Always Show",
 	"settings.functionSettings.screenshotSettings.neverShowColorPicker":
 		"Always Hide",
+	"settings.functionSettings.screenshotSettings.colorPickerHexIncludeHash":
+		"Include # when copying HEX colors",
 	"settings.functionSettings.screenshotSettings.beyondSelectRectElementOpacity":
 		"Opacity of elements beyond selection",
 	"settings.functionSettings.screenshotSettings.beyondSelectRectElementOpacity.tip":
@@ -332,6 +334,8 @@ export const settings = {
 		"Hide toolbar in recording",
 	"settings.functionSettings.videoRecordSettings.gifFrameRate":
 		"GIF Frame Rate",
+	"settings.functionSettings.videoRecordSettings.gifFrameRate.tip":
+		"Supports 1-120 fps. Uncommon frame rates may increase file size or reduce playback compatibility.",
 	"settings.functionSettings.videoRecordSettings.enableApngFormat":
 		"Enable APNG Format",
 	"settings.functionSettings.videoRecordSettings.gifFormat": "GIF Format",
