@@ -254,9 +254,9 @@ jobs:
       - name: Download and setup WebView2 Fixed Runtime
         if: matrix.platform == 'windows-latest' && matrix.fixedRuntime == true
         run: |
-          # 下载 WebView2 Fixed Runtime v130.0.2849.80
+          # 下载 WebView2 Fixed Runtime
           $runtimeVersion = "150.0.4078.48"
-          $cabUrl = "https://github.com/westinyang/WebView2RuntimeArchive/releases/download/130.0.2849.80/Microsoft.WebView2.FixedVersionRuntime.130.0.2849.80.x64.cab"
+          $cabUrl = "https://github.com/westinyang/WebView2RuntimeArchive/releases/download/$runtimeVersion/Microsoft.WebView2.FixedVersionRuntime.$runtimeVersion.x64.cab"
           $cabFile = "Microsoft.WebView2.FixedVersionRuntime.$runtimeVersion.x64.cab"
 
           Write-Host "Downloading WebView2 Fixed Runtime $runtimeVersion..."
