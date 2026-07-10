@@ -38,6 +38,10 @@ export enum DrawState {
 	DimensionCalibrate = 18,
 	// 尺寸标注
 	DimensionMeasure = 19,
+	// 双箭头
+	DoubleArrow = 20,
+	// I 字形箭头
+	BarArrow = 21,
 	// 撤销
 	Undo = 101,
 	// 重做

@@ -24,7 +24,7 @@
 			"digestAlgorithm": "sha256",
 			"webviewInstallMode": {
 				"type": "fixedRuntime",
-				"path": "Microsoft.WebView2.FixedVersionRuntime.150.0.4078.48.x64"
+				"path": "Microsoft.WebView2.FixedVersionRuntime.133.0.3065.92.x64"
 			},
 			"nsis": {
 				"template": "./build-configs/installer.nsi",

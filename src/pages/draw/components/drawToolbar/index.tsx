@@ -119,6 +119,8 @@ const isDrawTool = (drawState: DrawState) => {
 		case DrawState.Diamond:
 		case DrawState.Ellipse:
 		case DrawState.Arrow:
+		case DrawState.DoubleArrow:
+		case DrawState.BarArrow:
 		case DrawState.DimensionCalibrate:
 		case DrawState.DimensionMeasure:
 		case DrawState.Line:
@@ -392,6 +394,8 @@ const DrawToolbarCore: React.FC<DrawToolbarProps> = ({
 					);
 					break;
 				case DrawState.Arrow:
+				case DrawState.DoubleArrow:
+				case DrawState.BarArrow:
 				case DrawState.DimensionCalibrate:
 				case DrawState.DimensionMeasure:
 					drawLayerActionRef.current?.setActiveTool(

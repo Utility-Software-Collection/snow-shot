@@ -29,10 +29,22 @@ jobs:
         id: vars
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            raw_version="${{ inputs.version }}"
           else
-            echo "tag=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+            raw_version="${GITHUB_REF#refs/*/}"
           fi
+
+          app_version="${raw_version#v}"
+          tag="v${app_version}"
+
+          if ! [[ "$app_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid version: $raw_version" >&2
+            echo "Expected a semantic version like v1.2.3 or 1.2.3-beta.1" >&2
+            exit 1
+          fi
+
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+          echo "app_version=$app_version" >> $GITHUB_OUTPUT
         shell: bash
 
       # 手动触发时创建 tag
@@ -41,8 +53,8 @@ jobs:
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git tag -a ${{ steps.vars.outputs.tag }} -m "Release ${{ steps.vars.outputs.tag }}"
-          git push origin ${{ steps.vars.outputs.tag }}
+          git tag -a "${{ steps.vars.outputs.tag }}" -m "Release ${{ steps.vars.outputs.tag }}"
+          git push origin "${{ steps.vars.outputs.tag }}"
       # 安装 Node.js
       - name: Setup node
         uses: actions/setup-node@v6
@@ -58,9 +70,12 @@ jobs:
 
       - name: Set app version output
         id: app_version
-        run: echo "version=${{ steps.vars.outputs.tag }}" >> $GITHUB_OUTPUT
+        run: |
+          echo "tag=${{ steps.vars.outputs.tag }}" >> $GITHUB_OUTPUT
+          echo "version=${{ steps.vars.outputs.app_version }}" >> $GITHUB_OUTPUT
 
     outputs:
+      tag: ${{ steps.app_version.outputs.tag }}
       app_version: ${{ steps.app_version.outputs.version }}
 
   # 编译 Tauri 应用
@@ -104,6 +119,9 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: 22
+
+      - name: Sync app version
+        run: node scripts/sync-version.mjs "${{ needs.create-release.outputs.app_version }}"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
@@ -255,12 +273,27 @@ jobs:
         if: matrix.platform == 'windows-latest' && matrix.fixedRuntime == true
         run: |
           # 下载 WebView2 Fixed Runtime
-          $runtimeVersion = "150.0.4078.48"
+          $runtimeVersion = "133.0.3065.92"
           $cabUrl = "https://github.com/westinyang/WebView2RuntimeArchive/releases/download/$runtimeVersion/Microsoft.WebView2.FixedVersionRuntime.$runtimeVersion.x64.cab"
           $cabFile = "Microsoft.WebView2.FixedVersionRuntime.$runtimeVersion.x64.cab"
 
           Write-Host "Downloading WebView2 Fixed Runtime $runtimeVersion..."
-          Invoke-WebRequest -Uri $cabUrl -OutFile $cabFile
+          try {
+            $response = Invoke-WebRequest -Uri $cabUrl -OutFile $cabFile -PassThru -MaximumRedirection 5
+          } catch {
+            Write-Error "Failed to download WebView2 Fixed Runtime from $cabUrl. $($_.Exception.Message)"
+            exit 1
+          }
+
+          if ($response.StatusCode -lt 200 -or $response.StatusCode -ge 300) {
+            Write-Error "Failed to download WebView2 Fixed Runtime from $cabUrl. HTTP status: $($response.StatusCode)"
+            exit 1
+          }
+
+          if (!(Test-Path $cabFile) -or (Get-Item $cabFile).Length -lt 1048576) {
+            Write-Error "Downloaded WebView2 Fixed Runtime is missing or too small. URL: $cabUrl"
+            exit 1
+          }
 
           # 解压 cab 文件到 src-tauri 目录
           Write-Host "Extracting WebView2 Fixed Runtime..."
@@ -348,8 +381,8 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ needs.create-release.outputs.app_version }}
-          releaseName: Snow Shot ${{ needs.create-release.outputs.app_version }}
+          tagName: ${{ needs.create-release.outputs.tag }}
+          releaseName: Snow Shot ${{ needs.create-release.outputs.tag }}
           assetNamePattern: ${{ steps.asset_pattern.outputs.pattern }}
           releaseBody: ""
           releaseDraft: true

@@ -2,7 +2,12 @@ import { Button, Flex, theme } from "antd";
 import React, { useCallback, useContext, useMemo, useState } from "react";
 import { useIntl } from "react-intl";
 import { DrawStatePublisher } from "@/components/drawCore/extra";
-import { ArrowIcon, LineIcon } from "@/components/icons";
+import {
+	ArrowIcon,
+	BarArrowIcon,
+	DoubleArrowIcon,
+	LineIcon,
+} from "@/components/icons";
 import {
 	AppSettingsActionContext,
 	AppSettingsPublisher,
@@ -79,6 +84,38 @@ const ArrowToolCore: React.FC<{
 		updateLastArrowTool,
 	]);
 
+	const doubleArrowButton = useMemo(() => {
+		return (
+			<Button
+				icon={<DoubleArrowIcon style={{ fontSize: "1.08em" }} />}
+				title={intl.formatMessage({ id: "draw.doubleArrowTool" })}
+				type={getButtonTypeByState(drawState === DrawState.DoubleArrow)}
+				key="double-arrow"
+				onClick={() => {
+					onToolClickAction(DrawState.DoubleArrow);
+					updateLastArrowTool(DrawState.DoubleArrow);
+				}}
+				disabled={disable}
+			/>
+		);
+	}, [disable, drawState, intl, onToolClickAction, updateLastArrowTool]);
+
+	const barArrowButton = useMemo(() => {
+		return (
+			<Button
+				icon={<BarArrowIcon style={{ fontSize: "1.08em" }} />}
+				title={intl.formatMessage({ id: "draw.barArrowTool" })}
+				type={getButtonTypeByState(drawState === DrawState.BarArrow)}
+				key="bar-arrow"
+				onClick={() => {
+					onToolClickAction(DrawState.BarArrow);
+					updateLastArrowTool(DrawState.BarArrow);
+				}}
+				disabled={disable}
+			/>
+		);
+	}, [disable, drawState, intl, onToolClickAction, updateLastArrowTool]);
+
 	const lineButton = useMemo(() => {
 		return (
 			<Button
@@ -138,6 +175,16 @@ const ArrowToolCore: React.FC<{
 	) {
 		mainToolbarButton = arrowButton;
 	} else if (
+		lastArrowTool === DrawState.DoubleArrow &&
+		!customToolbarToolHiddenMap?.[DrawState.Arrow]
+	) {
+		mainToolbarButton = doubleArrowButton;
+	} else if (
+		lastArrowTool === DrawState.BarArrow &&
+		!customToolbarToolHiddenMap?.[DrawState.Arrow]
+	) {
+		mainToolbarButton = barArrowButton;
+	} else if (
 		lastArrowTool === DrawState.Line &&
 		!customToolbarToolHiddenMap?.[DrawState.Line]
 	) {
@@ -166,6 +213,8 @@ const ArrowToolCore: React.FC<{
 			content={
 				<Flex align="center" gap={token.paddingXS} className="popover-toolbar">
 					{arrowButton}
+					{!customToolbarToolHiddenMap?.[DrawState.Arrow] && doubleArrowButton}
+					{!customToolbarToolHiddenMap?.[DrawState.Arrow] && barArrowButton}
 					{!customToolbarToolHiddenMap?.[DrawState.Line] && lineButton}
 					{dimensionCalibrateButton}
 					{dimensionMeasureButton}

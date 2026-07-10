@@ -43,6 +43,8 @@ export const draw = {
 	"draw.diamondTool": "Diamond",
 	"draw.ellipseTool": "Ellipse",
 	"draw.arrowTool": "Arrow",
+	"draw.doubleArrowTool": "Double arrow",
+	"draw.barArrowTool": "I-shaped arrow",
 	"draw.lineTool": "Line",
 	"draw.measurement.calibrate": "Calibrate Dimension",
 	"draw.measurement.measure": "Dimension Label",

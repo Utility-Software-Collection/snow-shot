@@ -437,6 +437,54 @@ export const ArrowIcon = (props: IconComponentProps) => (
 	<Icon component={ArrowSVG} {...props} />
 );
 
+const DoubleArrowSVG = () => (
+	<svg
+		viewBox="0 0 1024 1024"
+		version="1.1"
+		xmlns="http://www.w3.org/2000/svg"
+		width="1em"
+		height="1em"
+		fill="none"
+		stroke="currentColor"
+		strokeWidth="78"
+		strokeLinecap="round"
+		strokeLinejoin="round"
+		aria-hidden="true"
+	>
+		<path d="M196 512h632" />
+		<path d="M322 342 152 512l170 170" />
+		<path d="M702 342 872 512 702 682" />
+	</svg>
+);
+
+export const DoubleArrowIcon = (props: IconComponentProps) => (
+	<Icon component={DoubleArrowSVG} {...props} />
+);
+
+const BarArrowSVG = () => (
+	<svg
+		viewBox="0 0 1024 1024"
+		version="1.1"
+		xmlns="http://www.w3.org/2000/svg"
+		width="1em"
+		height="1em"
+		fill="none"
+		stroke="currentColor"
+		strokeWidth="78"
+		strokeLinecap="round"
+		strokeLinejoin="round"
+		aria-hidden="true"
+	>
+		<path d="M232 232v560" />
+		<path d="M792 232v560" />
+		<path d="M232 512h560" />
+	</svg>
+);
+
+export const BarArrowIcon = (props: IconComponentProps) => (
+	<Icon component={BarArrowSVG} {...props} />
+);
+
 const EraserSVG = () => (
 	<svg
 		viewBox="0 0 1024 1024"

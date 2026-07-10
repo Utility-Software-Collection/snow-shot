@@ -331,7 +331,12 @@ const StatusBar: React.FC = () => {
 			});
 		}
 
-		if (drawState === DrawState.Arrow || drawState === DrawState.Line) {
+		if (
+			drawState === DrawState.Arrow ||
+			drawState === DrawState.DoubleArrow ||
+			drawState === DrawState.BarArrow ||
+			drawState === DrawState.Line
+		) {
 			items.push({
 				key: "rotateWithDiscreteAnglePicker",
 				label: <FormattedMessage id="draw.rotateWithDiscreteAnglePicker" />,
@@ -352,6 +357,8 @@ const StatusBar: React.FC = () => {
 			drawState === DrawState.Ellipse ||
 			drawState === DrawState.Diamond ||
 			drawState === DrawState.Arrow ||
+			drawState === DrawState.DoubleArrow ||
+			drawState === DrawState.BarArrow ||
 			drawState === DrawState.Line ||
 			drawState === DrawState.Pen ||
 			drawState === DrawState.Text ||

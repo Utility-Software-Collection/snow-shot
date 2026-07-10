@@ -272,6 +272,8 @@ export const FixedContentCoreDrawToolbar: React.FC<{
 					);
 					break;
 				case DrawState.Arrow:
+				case DrawState.DoubleArrow:
+				case DrawState.BarArrow:
 					drawCoreAction?.setActiveTool(
 						{
 							type: "arrow",

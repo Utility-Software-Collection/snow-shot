@@ -523,6 +523,33 @@ const DrawCoreComponent: React.FC<{
 		[],
 	);
 
+	const getArrowAppState = useCallback(
+		(drawState: DrawState): Partial<AppState> => {
+			switch (drawState) {
+				case DrawState.Arrow:
+				case DrawState.DimensionCalibrate:
+				case DrawState.DimensionMeasure:
+					return {
+						currentItemStartArrowhead: null,
+						currentItemEndArrowhead: "arrow",
+					};
+				case DrawState.DoubleArrow:
+					return {
+						currentItemStartArrowhead: "arrow",
+						currentItemEndArrowhead: "arrow",
+					};
+				case DrawState.BarArrow:
+					return {
+						currentItemStartArrowhead: "bar",
+						currentItemEndArrowhead: "bar",
+					};
+				default:
+					return {};
+			}
+		},
+		[],
+	);
+
 	const getToolAppState = useCallback(
 		(
 			drawState: DrawState | undefined,
@@ -532,9 +559,13 @@ const DrawCoreComponent: React.FC<{
 				return getMosaicAppState(appState);
 			}
 
+			if (drawState) {
+				return getArrowAppState(drawState);
+			}
+
 			return {};
 		},
-		[getMosaicAppState],
+		[getArrowAppState, getMosaicAppState],
 	);
 
 	const needSaveAppState = useCallback((drawState: DrawState) => {
@@ -543,6 +574,8 @@ const DrawCoreComponent: React.FC<{
 			case DrawState.Diamond:
 			case DrawState.Ellipse:
 			case DrawState.Arrow:
+			case DrawState.DoubleArrow:
+			case DrawState.BarArrow:
 			case DrawState.DimensionCalibrate:
 			case DrawState.DimensionMeasure:
 			case DrawState.Line:

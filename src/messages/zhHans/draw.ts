@@ -43,6 +43,8 @@ export const draw = {
 	"draw.diamondTool": "菱形",
 	"draw.ellipseTool": "椭圆",
 	"draw.arrowTool": "箭头",
+	"draw.doubleArrowTool": "双箭头",
+	"draw.barArrowTool": "I 字形箭头",
 	"draw.lineTool": "直线",
 	"draw.measurement.calibrate": "校准尺寸",
 	"draw.measurement.measure": "尺寸标注",
