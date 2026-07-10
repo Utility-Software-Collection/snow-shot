@@ -30,7 +30,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: excalidraw
-          key: excalidraw-build-${{ steps.excalidraw-info.outputs.hash }}
+          key: excalidraw-build-${{ runner.os }}-${{ runner.arch }}-x86_64-pc-windows-msvc-${{ steps.excalidraw-info.outputs.hash }}
 
       # 构建 Excalidraw
       - name: Build Excalidraw
@@ -50,7 +50,7 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: excalidraw
-          key: excalidraw-build-${{ steps.excalidraw-info.outputs.hash }}
+          key: excalidraw-build-${{ runner.os }}-${{ runner.arch }}-x86_64-pc-windows-msvc-${{ steps.excalidraw-info.outputs.hash }}
 
       # 移动 Excalidraw 目录
       - name: Move Excalidraw to Sibling Directory
