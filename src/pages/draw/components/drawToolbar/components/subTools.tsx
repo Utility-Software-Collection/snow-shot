@@ -80,16 +80,18 @@ export const SubTools: React.FC<{
 		);
 	}, [updateDrawToolbarStyleCore, contentScale, calculatedBoundaryRect]);
 
-	const handleMouseDown = useCallback(
-		(e: React.MouseEvent<HTMLDivElement>) => {
+	const handlePointerDown = useCallback(
+		(e: React.PointerEvent<HTMLDivElement>) => {
 			e.stopPropagation();
+			// 阻止触摸时浏览器默认的滚动 / 缩放等手势
+			e.preventDefault();
 			onMouseDown(e);
 		},
 		[onMouseDown],
 	);
 
 	const handleMouseMove = useCallback(
-		(event: MouseEvent) => {
+		(event: PointerEvent) => {
 			if (!subToolsRef.current) return;
 
 			onMouseMove(
@@ -117,11 +119,13 @@ export const SubTools: React.FC<{
 	}, [updateDrawToolbarStyle, resetDrag]);
 
 	useEffect(() => {
-		document.addEventListener("mousemove", handleMouseMove);
-		document.addEventListener("mouseup", onMouseUp);
+		document.addEventListener("pointermove", handleMouseMove);
+		document.addEventListener("pointerup", onMouseUp);
+		document.addEventListener("pointercancel", onMouseUp);
 		return () => {
-			document.removeEventListener("mousemove", handleMouseMove);
-			document.removeEventListener("mouseup", onMouseUp);
+			document.removeEventListener("pointermove", handleMouseMove);
+			document.removeEventListener("pointerup", onMouseUp);
+			document.removeEventListener("pointercancel", onMouseUp);
 		};
 	}, [handleMouseMove, onMouseUp]);
 
@@ -149,7 +153,8 @@ export const SubTools: React.FC<{
 				<div
 					className="drag-button"
 					title={dragTitle}
-					onMouseDown={handleMouseDown}
+					style={{ touchAction: "none" }}
+					onPointerDown={handlePointerDown}
 				>
 					<HolderOutlined />
 				</div>

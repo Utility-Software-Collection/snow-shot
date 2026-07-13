@@ -15,6 +15,75 @@ pub enum VideoRecordState {
     Paused,
 }
 
+/// 根据预设值获取基于CRF/global_quality参数的编码器质量值
+/// 适用于AV1、VP9、H264_QSV等使用global_quality参数的编码器
+///
+/// # 参数
+/// * `preset` - 编码器预设值
+///
+/// # 返回
+/// global_quality参数值 (0-51, **值越小质量越高**)
+///
+/// # 质量说明
+/// * 18: 高质量（压缩率低），慢速编码
+/// * 22: 平衡质量
+/// * 28: 低质量（压缩率高），快速编码
+fn get_global_quality(preset: &str) -> i32 {
+    match preset {
+        "ultrafast" | "superfast" | "veryfast" | "faster" | "fast" => 28,
+        "medium" => 22,
+        "slow" | "slower" => 18,
+        "veryslow" | "placebo" => 16,
+        _ => 22,
+    }
+}
+
+/// 根据预设值获取MPEG4编码器的qscale值
+///
+/// # 参数
+/// * `preset` - 编码器预设值
+///
+/// # 返回
+/// qscale参数值 (1-31, **值越小质量越高**)
+///
+/// # 质量说明
+/// * 4: 较高质量（压缩率较低），默认平衡值
+/// * 5: 中等质量
+/// * 6: 较低质量（压缩率较高）
+/// * 7: 低质量（压缩率很高）
+fn get_mpeg4_quality(preset: &str) -> i32 {
+    match preset {
+        "ultrafast" | "superfast" | "veryfast" | "faster" | "fast" => 4,
+        "medium" => 5,
+        "slow" | "slower" => 6,
+        "veryslow" | "placebo" => 7,
+        _ => 4,
+    }
+}
+
+/// 根据预设值获取ProRes编码器的profile值
+///
+/// # 参数
+/// * `preset` - 编码器预设值
+///
+/// # 返回
+/// profile参数值 (0-3)
+///
+/// # Profile说明 (FFmpeg prores编码器)
+/// * 0: Proxy (最低质量,最高压缩率)
+/// * 1: LT (低质量,中高压缩率)
+/// * 2: Standard (默认,平衡)
+/// * 3: Normal (高质量,低压缩率)
+fn get_prores_quality(preset: &str) -> i32 {
+    match preset {
+        "ultrafast" | "superfast" | "veryfast" | "faster" | "fast" => 0,
+        "medium" => 1,
+        "slow" | "slower" => 2,
+        "veryslow" | "placebo" => 3,
+        _ => 2,
+    }
+}
+
 #[derive(PartialEq, Serialize, Deserialize, Debug, Clone, Copy)]
 pub enum VideoFormat {
     Mp4,
@@ -422,6 +491,7 @@ impl VideoRecordService {
                 command.arg("-c:v").arg(&params.encoder);
 
                 // 根据编码器类型设置预设值
+                // 注意: 检查顺序很重要,必须先检查特定编码器,最后才检查通用编码器
                 if params.encoder.contains("amf") {
                     // AMD AMF编码器只支持特定的预设值
                     let amf_preset = match params.encoder_preset.as_str() {
@@ -433,6 +503,30 @@ impl VideoRecordService {
                         _ => "balanced", // 默认使用balanced
                     };
                     command.arg("-preset").arg(amf_preset);
+                } else if params.encoder.starts_with("libaom") || params.encoder.starts_with("av1_") {
+                    // AV1编码器使用global_quality参数 (详见 get_global_quality 函数注释)
+                    let quality = get_global_quality(&params.encoder_preset);
+                    command.arg("-global_quality").arg(quality.to_string());
+                } else if params.encoder.starts_with("libvpx") {
+                    // VP9编码器使用global_quality参数 (详见 get_global_quality 函数注释)
+                    let quality = get_global_quality(&params.encoder_preset);
+                    command.arg("-global_quality").arg(quality.to_string());
+                } else if params.encoder.starts_with("mpeg4") {
+                    // MPEG4编码器使用qscale参数
+                    // qscale值 (1-31, **值越小质量越高**)
+                    // 4: 高质量（压缩率低），慢速编码
+                    // 5: 平衡质量
+                    // 7: 低质量（压缩率高），快速编码
+                    let quality = get_mpeg4_quality(&params.encoder_preset);
+                    command.arg("-qscale").arg(quality.to_string());
+                } else if params.encoder.starts_with("prores") {
+                    // ProRes编码器使用profile参数 (详见 get_prores_quality 函数注释)
+                    let quality = get_prores_quality(&params.encoder_preset);
+                    command.arg("-profile").arg(quality.to_string());
+                } else if params.encoder.starts_with("h264_qsv") {
+                    // Intel H264_QSV编码器使用global_quality参数 (详见 get_global_quality 函数注释)
+                    let quality = get_global_quality(&params.encoder_preset);
+                    command.arg("-global_quality").arg(quality.to_string());
                 } else if params.encoder.contains("nvenc") {
                     // NVIDIA NVENC编码器支持的预设值
                     let nvenc_preset = match params.encoder_preset.as_str() {

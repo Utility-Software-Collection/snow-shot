@@ -172,8 +172,12 @@ pub fn run() {
 
             #[cfg(target_os = "macos")]
             {
-                // macOS 下不在 dock 显示
-                app.set_activation_policy(tauri::ActivationPolicy::Prohibited);
+                // macOS 下不在 dock 显示。
+                // 必须用 Accessory 而非 Prohibited：全局快捷键回调跑在主窗口 webview 的 JS 里，
+                // 主窗口默认隐藏(visible:false)，只有 Accessory 这种后台 agent 策略才能让
+                // 应用在窗口隐藏时仍保持活跃、隐藏 webview 的 JS 持续运行，快捷键才会触发。
+                // Prohibited 会让应用无法被激活、隐藏 webview 被挂起，导致快捷键失效。
+                app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             }
 
             // 监听窗口关闭事件，拦截关闭按钮
@@ -256,6 +260,7 @@ pub fn run() {
             ocr::ocr_detect_with_shared_buffer,
             ocr::ocr_init,
             ocr::ocr_release,
+            ocr::list_ocr_model_files,
             core::exit_app,
             core::start_free_drag,
             core::start_resize_window,

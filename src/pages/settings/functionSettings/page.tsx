@@ -36,6 +36,8 @@ import {
 	useState,
 } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import { listOcrModelFiles } from "@/commands/ocr";
 import { videoRecordGetMicrophoneDeviceNames } from "@/commands/videoRecord";
 import { ContentWrap } from "@/components/contentWrap";
 import { DirectoryInput } from "@/components/directoryInput";
@@ -67,11 +69,13 @@ import {
 	CloudSaveUrlFormat,
 	CloudSaveUrlType,
 	DoubleClickAction,
+	DragOutsideSelectRectAction,
 	FixedContentDoubleClickAction,
 	GifFormat,
 	KeyDisplayDirection,
 	OcrDetectAfterAction,
 	OcrModel,
+	type CustomOcrModelConfig,
 	TranslationApiType,
 	TrayIconClickAction,
 	VideoMaxSize,
@@ -294,7 +298,7 @@ export const FunctionSettingsPage = () => {
 		[currentPlatform],
 	);
 
-	const { isReadyStatus } = usePluginServiceContext();
+	const { isReadyStatus, pluginConfig } = usePluginServiceContext();
 
 	const initedMicrophoneDeviceNameOptions = useRef(false);
 	useEffect(() => {
@@ -646,18 +650,31 @@ export const FunctionSettingsPage = () => {
 		return [
 			{
 				label: intl.formatMessage({
-					id: "settings.systemSettings.screenshotSettings.ocrModel.rapidOcrV4",
+					id: "settings.systemSettings.screenshotSettings.ocrModel.paddleOcrV4",
 				}),
 				value: OcrModel.RapidOcrV4,
 			},
-			{
-				label: intl.formatMessage({
-					id: "settings.systemSettings.screenshotSettings.ocrModel.rapidOcrV5",
-				}),
-				value: OcrModel.RapidOcrV5,
-			},
 		];
 	}, [intl]);
+
+	const [ocrModelFileOptions, setOcrModelFileOptions] = useState<
+		SelectProps["options"]
+	>([]);
+	useEffect(() => {
+		if (!isReadyStatus?.(PLUGIN_ID_RAPID_OCR) || !pluginConfig) {
+			return;
+		}
+		pluginConfig.getPluginDirPath(PLUGIN_ID_RAPID_OCR).then((dirPath) => {
+			listOcrModelFiles(dirPath).then((files) => {
+				setOcrModelFileOptions(
+					files.map((file) => ({
+						label: file,
+						value: file,
+					})),
+				);
+			});
+		});
+	}, [isReadyStatus, pluginConfig]);
 
 	const { getVisionModelList } = useVisionModelList();
 	const [htmlVisionModelOptions, setHtmlVisionModelOptions] = useState<
@@ -751,6 +768,35 @@ export const FunctionSettingsPage = () => {
 					id: "draw.fixedContentDoubleClickAction.closeWindow",
 				}),
 				value: FixedContentDoubleClickAction.CloseWindow,
+			},
+		];
+	}, [intl]);
+
+	const dragOutsideSelectRectActionOptions = useMemo(() => {
+		return [
+			{
+				label: intl.formatMessage({
+					id: "draw.dragOutsideSelectRect.redrawSelection",
+				}),
+				value: DragOutsideSelectRectAction.RedrawSelection,
+			},
+			{
+				label: intl.formatMessage({
+					id: "draw.dragOutsideSelectRect.adjustSelection",
+				}),
+				value: DragOutsideSelectRectAction.AdjustSelection,
+			},
+			{
+				label: intl.formatMessage({
+					id: "draw.dragOutsideSelectRect.moveSelection",
+				}),
+				value: DragOutsideSelectRectAction.MoveSelection,
+			},
+			{
+				label: intl.formatMessage({
+					id: "draw.dragOutsideSelectRect.none",
+				}),
+				value: DragOutsideSelectRectAction.None,
 			},
 		];
 	}, [intl]);
@@ -880,20 +926,36 @@ export const FunctionSettingsPage = () => {
 						</Row>
 					)}
 
-					<Row gutter={token.marginLG}>
-						<Col span={12}>
-							<ProFormSelect
-								name="doubleClickAction"
-								layout="horizontal"
-								label={
-									<IconLabel
-										label={<FormattedMessage id="draw.doubleClickAction" />}
-									/>
-								}
-								options={doubleClickActionOptions}
-							/>
-						</Col>
-					</Row>
+				<Row gutter={token.marginLG}>
+					<Col span={12}>
+						<ProFormSelect
+							name="doubleClickAction"
+							layout="horizontal"
+							label={
+								<IconLabel
+									label={<FormattedMessage id="draw.doubleClickAction" />}
+								/>
+							}
+							options={doubleClickActionOptions}
+						/>
+					</Col>
+
+					<Col span={12}>
+						<ProFormSelect
+							name="dragOutsideSelectRectAction"
+							layout="horizontal"
+							label={
+								<IconLabel
+									label={
+										<FormattedMessage id="draw.dragOutsideSelectRect" />
+									}
+								/>
+							}
+							options={dragOutsideSelectRectActionOptions}
+						/>
+					</Col>
+				</Row>
+
 
 					<Row gutter={token.marginLG}>
 						<Col span={12}>
@@ -1393,39 +1455,169 @@ export const FunctionSettingsPage = () => {
 						>
 							<Row gutter={token.marginLG}>
 								<Col span={12}>
-									<ProFormSelect
-										label={
-											<IconLabel
-												label={
-													<FormattedMessage id="settings.systemSettings.screenshotSettings.ocrModel" />
-												}
-											/>
-										}
-										name="ocrModel"
-										options={ocrModelOptions}
-									/>
+									<ProFormDependency name={["customOcrModelConfigList"]}>
+										{({ customOcrModelConfigList }) => {
+											const allOptions = [
+												...ocrModelOptions,
+												...(customOcrModelConfigList || [])
+													.filter((c: CustomOcrModelConfig) => c.model_name)
+													.map((c: CustomOcrModelConfig) => ({
+														label: c.model_name,
+														value: c.model_name,
+													})),
+											];
+											return (
+												<ProFormSelect
+													label={
+														<IconLabel
+															label={
+																<FormattedMessage id="settings.systemSettings.screenshotSettings.ocrModel" />
+															}
+														/>
+													}
+													name="ocrModel"
+													options={allOptions}
+												/>
+											);
+										}}
+									</ProFormDependency>
 								</Col>
 
 								{isReadyStatus?.(PLUGIN_ID_AI_CHAT) && (
-									<>
-										<Col span={12}>
-											<ProFormSelect
-												name="htmlVisionModel"
+									<Col span={12}>
+										<ProFormSelect
+											name="htmlVisionModel"
+											label={
+												<IconLabel
+													label={
+														<FormattedMessage id="settings.functionSettings.ocrSettings.htmlVisionModel" />
+													}
+													tooltipTitle={
+														<FormattedMessage id="settings.functionSettings.ocrSettings.htmlVisionModel.tip" />
+													}
+												/>
+											}
+											layout="vertical"
+											options={htmlVisionModelOptions}
+											allowClear={false}
+										/>
+									</Col>
+								)}
+							</Row>
+
+							<Row gutter={token.marginLG}>
+								<Col span={24}>
+									<ProFormList
+										name="customOcrModelConfigList"
+										label={
+											<IconLabel
 												label={
-													<IconLabel
-														label={
-															<FormattedMessage id="settings.functionSettings.ocrSettings.htmlVisionModel" />
-														}
-														tooltipTitle={
-															<FormattedMessage id="settings.functionSettings.ocrSettings.htmlVisionModel.tip" />
-														}
+													<FormattedMessage id="settings.functionSettings.ocrSettings.customOcrModelConfig" />
+												}
+												tooltipTitle={
+													<FormattedMessage
+														id="settings.functionSettings.ocrSettings.customOcrModelConfig.tip"
+														values={{
+															link: (
+																<a
+																	onClick={(event) => {
+																		event.preventDefault();
+																		openUrl(
+																			"https://www.modelscope.cn/models/RapidAI/RapidOCR/tree/master/onnx",
+																		);
+																	}}
+																>
+																	<FormattedMessage id="settings.functionSettings.ocrSettings.customOcrModelConfig.tip.link" />
+																</a>
+															),
+														}}
 													/>
 												}
-												layout="vertical"
-												options={htmlVisionModelOptions}
-												allowClear={false}
 											/>
-										</Col>
+										}
+										creatorButtonProps={{
+											creatorButtonText: intl.formatMessage({
+												id: "settings.functionSettings.ocrSettings.customOcrModelConfig.add",
+											}),
+										}}
+										className="api-config-list"
+										min={0}
+										itemRender={({ listDom, action }) => (
+											<Flex align="end" justify="space-between">
+												{listDom}
+												<div>{action}</div>
+											</Flex>
+										)}
+										creatorRecord={() => ({
+											model_name: "",
+											det_model: "ch_PP-OCRv4_det_infer.onnx",
+											rec_model: "ch_PP-OCRv4_rec_infer.onnx",
+											cls_model: "ch_ppocr_mobile_v2.0_cls_infer.onnx",
+										})}
+									>
+										<Row gutter={token.marginLG} style={{ width: "100%" }}>
+											<Col span={12}>
+												<ProFormText
+													name="model_name"
+													label={
+														<IconLabel
+															label={
+																<FormattedMessage id="settings.functionSettings.ocrSettings.customOcrModelConfig.modelName" />
+															}
+														/>
+													}
+												/>
+											</Col>
+											<Col span={12}>
+												<ProFormSelect
+													name="det_model"
+													label={
+														<IconLabel
+															label={
+																<FormattedMessage id="settings.functionSettings.ocrSettings.customOcrModelConfig.detModel" />
+															}
+														/>
+													}
+													allowClear={false}
+													options={ocrModelFileOptions}
+												/>
+											</Col>
+											<Col span={12}>
+												<ProFormSelect
+													name="cls_model"
+													label={
+														<IconLabel
+															label={
+																<FormattedMessage id="settings.functionSettings.ocrSettings.customOcrModelConfig.clsModel" />
+															}
+														/>
+													}
+													allowClear={false}
+													options={ocrModelFileOptions}
+												/>
+											</Col>
+											<Col span={12}>
+												<ProFormSelect
+													name="rec_model"
+													label={
+														<IconLabel
+															label={
+																<FormattedMessage id="settings.functionSettings.ocrSettings.customOcrModelConfig.recModel" />
+															}
+														/>
+													}
+													allowClear={false}
+													options={ocrModelFileOptions}
+												/>
+											</Col>
+										</Row>
+									</ProFormList>
+								</Col>
+							</Row>
+
+							{isReadyStatus?.(PLUGIN_ID_AI_CHAT) && (
+								<>
+									<Row gutter={token.marginLG}>
 										<Col span={24}>
 											<ProFormTextArea
 												name="htmlVisionModelSystemPrompt"
@@ -1462,9 +1654,9 @@ export const FunctionSettingsPage = () => {
 												}}
 											/>
 										</Col>
-									</>
-								)}
-							</Row>
+									</Row>
+								</>
+							)}
 						</ProForm>
 					</Spin>
 				</>
@@ -2262,6 +2454,34 @@ export const FunctionSettingsPage = () => {
 											label: "Libx265 (CPU)",
 											value: "libx265",
 										},
+										{
+											label: "Libaom-AV1 (CPU)",
+											value: "libaom-av1",
+										},
+										{
+											label: "Libvpx-VP9 (CPU)",
+											value: "libvpx-vp9",
+										},
+										{
+											label: "AV1_QSV (Intel)",
+											value: "av1_qsv",
+										},
+										{
+											label: "H264_QSV (Intel)",
+											value: "h264_qsv",
+										},
+										{
+											label: "MPEG4 (CPU)",
+											value: "mpeg4",
+										},
+										...(currentPlatform === "macos"
+											? [
+													{
+														label: "ProRes (CPU)",
+														value: "prores",
+													},
+												]
+											: []),
 										...(currentPlatform === "windows"
 											? [
 													{

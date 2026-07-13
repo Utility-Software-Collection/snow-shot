@@ -295,6 +295,10 @@ const EventListenerCore: React.FC<{ children: React.ReactNode }> = ({
 				callback: async () => {},
 			});
 			defaultListener.push({
+				event: "execute-translate-ocr-text",
+				callback: async () => {},
+			});
+			defaultListener.push({
 				event: "main-window:send-error-message",
 				callback: async ({ payload }: { payload: string }) => {
 					showWindow();

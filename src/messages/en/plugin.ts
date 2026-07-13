@@ -23,4 +23,5 @@ export const plugin = {
 	"plugin.install": "Install",
 	"plugin.uninstall": "Uninstall",
 	"plugin.forceInstall": "Reinstall",
+	"plugin.openDataDir": "Open Plugin Data Directory",
 };

@@ -41,6 +41,15 @@ const GlobalEventHandlerCore: React.FC = () => {
 					to: `/tools/translation?selectText=${encodeParamsValue(text)}&t=${Date.now()}`,
 				});
 			}),
+			addListener("execute-translate-ocr-text", async (e) => {
+				const text = String(
+					(e as { payload?: unknown })?.payload ?? "",
+				).substring(0, 10000);
+				await showWindow();
+				router.navigate({
+					to: `/tools/translation?selectText=${encodeParamsValue(text)}&t=${Date.now()}`,
+				});
+			}),
 			addListener("show-or-hide-main-window", () => {
 				showMainWindow(true);
 			}),

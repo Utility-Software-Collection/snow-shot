@@ -20,6 +20,10 @@ export const executeTranslateSelectedText = async () => {
 	await emit("execute-translate-selected-text");
 };
 
+export const executeTranslateOcrText = async (text: string) => {
+	await emit("execute-translate-ocr-text", text);
+};
+
 export const showOrHideMainWindow = async () => {
 	await emit("show-or-hide-main-window");
 };

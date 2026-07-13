@@ -727,10 +727,14 @@ const DrawToolbarCore: React.FC<DrawToolbarProps> = ({
 		),
 	);
 
-	const handleMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-		e.stopPropagation();
-		e.preventDefault();
-	}, []);
+	const handlePointerDown = useCallback(
+		(e: React.PointerEvent<HTMLDivElement>) => {
+			e.stopPropagation();
+			// 阻止触摸时浏览器默认的滚动 / 缩放等手势
+			e.preventDefault();
+		},
+		[],
+	);
 	const handleContextMenu = useCallback(
 		(e: React.MouseEvent<HTMLDivElement>) => {
 			e.stopPropagation();
@@ -755,7 +759,7 @@ const DrawToolbarCore: React.FC<DrawToolbarProps> = ({
 	return (
 		<div
 			className="draw-toolbar-container"
-			onMouseDown={handleMouseDown}
+			onPointerDown={handlePointerDown}
 			onContextMenu={handleContextMenu}
 			ref={drawToolarContainerRef}
 		>

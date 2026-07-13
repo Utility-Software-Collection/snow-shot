@@ -1,7 +1,7 @@
 "use client";
 
-import { DeleteOutlined, PlusOutlined, SyncOutlined } from "@ant-design/icons";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { DeleteOutlined, FolderOpenOutlined, PlusOutlined, SyncOutlined } from "@ant-design/icons";
+import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { Badge, Button, List } from "antd";
 import { useMemo } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
@@ -126,6 +126,26 @@ export const PluginsPage = () => {
 								}}
 							>
 								<FormattedMessage id="plugin.forceInstall" />
+							</Button>,
+							<Button
+								key="openDataDir"
+								variant="text"
+								color="primary"
+								size="small"
+								icon={<FolderOpenOutlined />}
+								disabled={item.status !== PluginStatus.Installed}
+								onClick={async () => {
+									try {
+										const dirPath = await pluginConfig?.getPluginDirPath(item.id);
+										if (dirPath) {
+											await openPath(dirPath);
+										}
+									} catch (error) {
+										appError("[PluginsPage] open data dir error", error);
+									}
+								}}
+							>
+								<FormattedMessage id="plugin.openDataDir" />
 							</Button>,
 						]}
 						extra={

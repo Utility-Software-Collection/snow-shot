@@ -753,7 +753,7 @@ const ColorPickerCore: React.FC<{
 	);
 
 	useEffect(() => {
-		const handleMouseMove = (e: MouseEvent) => {
+		const handlePointerMove = (e: PointerEvent) => {
 			if (isDisableMouseMove()) {
 				return;
 			}
@@ -761,10 +761,10 @@ const ColorPickerCore: React.FC<{
 			update(e.clientX, e.clientY);
 		};
 
-		document.addEventListener("mousemove", handleMouseMove);
+		document.addEventListener("pointermove", handlePointerMove);
 
 		return () => {
-			document.removeEventListener("mousemove", handleMouseMove);
+			document.removeEventListener("pointermove", handlePointerMove);
 		};
 	}, [isDisableMouseMove, update]);
 

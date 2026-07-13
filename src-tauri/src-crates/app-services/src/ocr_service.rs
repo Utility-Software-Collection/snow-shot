@@ -16,7 +16,6 @@ pub struct OcrService {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy, PartialOrd, Serialize, Deserialize)]
 pub enum OcrModel {
     RapidOcrV4,
-    RapidOcrV5,
 }
 
 impl OcrService {
@@ -117,31 +116,29 @@ impl OcrService {
     pub async fn init_models(
         &mut self,
         orc_plugin_path: PathBuf,
-        model: OcrModel,
+        det_model_name: Option<String>,
+        cls_model_name: Option<String>,
+        rec_model_name: Option<String>,
         hot_start: bool,
         ocr_model_write_to_memory: bool,
     ) -> Result<(), String> {
+        let det_file = det_model_name.unwrap_or_else(|| "ch_PP-OCRv4_det_infer.onnx".to_string());
+        let cls_file = cls_model_name.unwrap_or_else(|| "ch_ppocr_mobile_v2.0_cls_infer.onnx".to_string());
+        let rec_file = rec_model_name.unwrap_or_else(|| "ch_PP-OCRv4_rec_infer.onnx".to_string());
+
         log::info!(
-            "[OcrService::init_models] orc_plugin_path: {:?}, model: {:?}, hot_start: {:?}, ocr_model_write_to_memory: {:?}",
+            "[OcrService::init_models] orc_plugin_path: {:?}, det: {}, cls: {}, rec: {}, hot_start: {:?}, ocr_model_write_to_memory: {:?}",
             orc_plugin_path,
-            model,
+            det_file,
+            cls_file,
+            rec_file,
             hot_start,
             ocr_model_write_to_memory
         );
 
-        // 加载模型到内存
-        let (det_model_path, cls_model_path, rec_model_path) = match model {
-            OcrModel::RapidOcrV4 => (
-                orc_plugin_path.join("ch_PP-OCRv4_det_infer.onnx"),
-                orc_plugin_path.join("ch_ppocr_mobile_v2.0_cls_infer.onnx"),
-                orc_plugin_path.join("ch_PP-OCRv4_rec_infer.onnx"),
-            ),
-            OcrModel::RapidOcrV5 => (
-                orc_plugin_path.join("ch_PP-OCRv4_det_infer.onnx"),
-                orc_plugin_path.join("ch_ppocr_mobile_v2.0_cls_infer.onnx"),
-                orc_plugin_path.join("ch_PP-OCRv5_rec_mobile_infer.onnx"),
-            ),
-        };
+        let det_model_path = orc_plugin_path.join(&det_file);
+        let cls_model_path = orc_plugin_path.join(&cls_file);
+        let rec_model_path = orc_plugin_path.join(&rec_file);
 
         let (det_model_config, cls_model_config, rec_model_config) = if ocr_model_write_to_memory {
             let (det_result, cls_result, rec_result) = self

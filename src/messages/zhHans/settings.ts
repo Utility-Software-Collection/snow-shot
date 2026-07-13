@@ -539,10 +539,8 @@ export const settings = {
 	"settings.systemSettings.screenshotSettings.tryGetElementByFocus.always":
 		"保持启用",
 	"settings.systemSettings.screenshotSettings.ocrModel": "文本识别模型",
-	"settings.systemSettings.screenshotSettings.ocrModel.rapidOcrV4":
-		"Rapid OCR V4",
-	"settings.systemSettings.screenshotSettings.ocrModel.rapidOcrV5":
-		"Rapid OCR V5",
+	"settings.systemSettings.screenshotSettings.ocrModel.paddleOcrV4":
+		"PaddleOCR V4",
 	"settings.systemSettings.screenshotSettings.ocrHotStart": "文本识别热启动",
 	"settings.systemSettings.screenshotSettings.ocrHotStart.tip":
 		"预加载文本识别模型，提高文本识别的识别速度，但会提高内存占用",
@@ -628,6 +626,15 @@ export const settings = {
 	"settings.functionSettings.ocrSettings.htmlVisionModel": "视觉理解模型",
 	"settings.functionSettings.ocrSettings.htmlVisionModel.tip":
 		"将图片转为 HTML 的视觉理解模型",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig": "文本识别模型配置",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.tip":
+		"从 {link} 下载 ONNX 模型文件放置到插件数据目录后，可在此配置文本识别模型",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.tip.link": "此仓库",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.add": "添加文本识别模型配置",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.modelName": "模型名称",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.detModel": "检测(det)",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.recModel": "识别(rec)",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.clsModel": "方向(cls)",
 	"settings.functionSettings.ocrSettings.htmlVisionModel.default": "默认",
 	"settings.functionSettings.ocrSettings.htmlVisionModel.default.tip":
 		"默认使用首个支持视觉理解的模型",

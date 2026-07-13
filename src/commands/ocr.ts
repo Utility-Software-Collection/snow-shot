@@ -1,5 +1,4 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { OcrModel } from "@/types/appSettings";
 import type { OcrDetectResult } from "@/types/commands/ocr";
 
 export const ocrDetect = async (
@@ -29,13 +28,17 @@ export const ocrDetectWithSharedBuffer = async (
 
 export const ocrInit = async (
 	orcPluginPath: string,
-	model: OcrModel,
+	detModel: string | null,
+	clsModel: string | null,
+	recModel: string | null,
 	hotStart: boolean,
 	modelWriteToMemory: boolean,
 ): Promise<void> => {
 	await invoke<void>("ocr_init", {
 		orcPluginPath,
-		model,
+		detModel,
+		clsModel,
+		recModel,
 		hotStart,
 		modelWriteToMemory,
 	});
@@ -43,4 +46,8 @@ export const ocrInit = async (
 
 export const ocrRelease = async (): Promise<void> => {
 	await invoke<void>("ocr_release");
+};
+
+export const listOcrModelFiles = async (dirPath: string): Promise<string[]> => {
+	return await invoke<string[]>("list_ocr_model_files", { dirPath });
 };

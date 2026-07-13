@@ -171,9 +171,9 @@ export const useDragElement = (
 		) => ElementRect,
 	) => UpdateElementPositionResult;
 	reset: () => void;
-	onMouseDown: (event: React.MouseEvent<HTMLDivElement> | MouseEvent) => void;
+	onMouseDown: (event: React.PointerEvent<HTMLDivElement> | PointerEvent) => void;
 	onMouseMove: (
-		event: React.MouseEvent<HTMLDivElement> | MouseEvent,
+		event: React.PointerEvent<HTMLDivElement> | PointerEvent,
 		element: HTMLElement,
 		contentScale?: number,
 		calculatedBoundaryRect?: (
@@ -287,7 +287,7 @@ export const useDragElement = (
 	}, []);
 
 	const onMouseDown = useCallback(
-		(event: React.MouseEvent<HTMLDivElement> | MouseEvent) => {
+		(event: React.PointerEvent<HTMLDivElement> | PointerEvent) => {
 			draggingRef.current = true;
 			setDragging(true);
 			mouseOriginPositionRef.current = new MousePosition(
@@ -508,8 +508,10 @@ const DragButtonCore: React.FC<{
 	]);
 
 	const handleMouseDown = useCallback(
-		(e: React.MouseEvent<HTMLDivElement>) => {
+		(e: React.PointerEvent<HTMLDivElement>) => {
 			e.stopPropagation();
+			// 阻止触摸时浏览器默认的滚动 / 缩放等手势
+			e.preventDefault();
 			setDragging(true);
 			onMouseDown(e);
 		},
@@ -528,7 +530,7 @@ const DragButtonCore: React.FC<{
 
 	// 处理鼠标移动事件
 	const handleMouseMove = useCallback(
-		(event: React.MouseEvent<HTMLDivElement> | MouseEvent) => {
+		(event: React.PointerEvent<HTMLDivElement> | PointerEvent) => {
 			if (!draggingRef.current || !drawToolbarRef.current) {
 				return;
 			}
@@ -550,11 +552,13 @@ const DragButtonCore: React.FC<{
 	);
 
 	useEffect(() => {
-		document.addEventListener("mousemove", handleMouseMove);
-		document.addEventListener("mouseup", handleMouseUp);
+		document.addEventListener("pointermove", handleMouseMove);
+		document.addEventListener("pointerup", handleMouseUp);
+		document.addEventListener("pointercancel", handleMouseUp);
 		return () => {
-			document.removeEventListener("mousemove", handleMouseMove);
-			document.removeEventListener("mouseup", handleMouseUp);
+			document.removeEventListener("pointermove", handleMouseMove);
+			document.removeEventListener("pointerup", handleMouseUp);
+			document.removeEventListener("pointercancel", handleMouseUp);
 		};
 	}, [handleMouseMove, handleMouseUp]);
 
@@ -618,7 +622,8 @@ const DragButtonCore: React.FC<{
 		<div
 			className="draw-toolbar-drag drag-button"
 			title={dragTitle}
-			onMouseDown={handleMouseDown}
+			style={{ touchAction: "none" }}
+			onPointerDown={handleMouseDown}
 		>
 			<HolderOutlined />
 		</div>

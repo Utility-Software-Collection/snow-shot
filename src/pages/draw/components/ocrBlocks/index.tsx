@@ -29,6 +29,7 @@ import type { OcrDetectResult } from "@/types/commands/ocr";
 import type { ElementRect } from "@/types/commands/screenshot";
 import { DrawState } from "@/types/draw";
 import { writeTextToClipboard } from "@/utils/clipboard";
+import { executeTranslateOcrText } from "@/functions/tools";
 import { ScreenshotType } from "@/utils/types";
 import { zIndexs } from "@/utils/zIndex";
 import { getCanvas } from "../../actions";
@@ -237,6 +238,14 @@ export const OcrBlocks: React.FC<{
 		onConvertImageToVisionModelFormat("markdown");
 	}, [onConvertImageToVisionModelFormat]);
 
+	const onTranslateOcrToPage = useCallback(() => {
+		if (!ocrResult?.result) {
+			return;
+		}
+		const text = covertOcrResultToText(ocrResult.result);
+		executeTranslateOcrText(text);
+	}, [ocrResult]);
+
 	const { isReadyStatus } = usePluginServiceContext();
 
 	return (
@@ -246,6 +255,7 @@ export const OcrBlocks: React.FC<{
 				<OcrTool
 					onSwitchOcrResult={onSwitchOcrResult}
 					onTranslate={onTranslate}
+					onTranslateOcrToPage={onTranslateOcrToPage}
 					onConvertImageToHtml={onConvertImageToHtml}
 					onConvertImageToMarkdown={onConvertImageToMarkdown}
 					currentOcrResult={currentOcrResult}

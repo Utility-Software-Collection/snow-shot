@@ -4,7 +4,7 @@ use rayon::iter::IntoParallelIterator;
 use rayon::iter::ParallelIterator;
 use serde::Deserialize;
 use serde::Serialize;
-use snow_shot_app_services::ocr_service::{OcrModel, OcrService};
+use snow_shot_app_services::ocr_service::OcrService;
 use std::io::Cursor;
 use std::path::PathBuf;
 use tokio::sync::Mutex;
@@ -12,14 +12,23 @@ use tokio::sync::Mutex;
 pub async fn ocr_init(
     orc_plugin_path: PathBuf,
     ocr_service: tauri::State<'_, Mutex<OcrService>>,
-    model: OcrModel,
+    det_model: Option<String>,
+    cls_model: Option<String>,
+    rec_model: Option<String>,
     hot_start: bool,
     ocr_model_write_to_memory: bool,
 ) -> Result<(), String> {
     let mut ocr_service = ocr_service.lock().await;
 
     ocr_service
-        .init_models(orc_plugin_path, model, hot_start, ocr_model_write_to_memory)
+        .init_models(
+            orc_plugin_path,
+            det_model,
+            cls_model,
+            rec_model,
+            hot_start,
+            ocr_model_write_to_memory,
+        )
         .await?;
 
     Ok(())
@@ -206,4 +215,22 @@ pub async fn ocr_release(ocr_service: tauri::State<'_, Mutex<OcrService>>) -> Re
     ocr_service.release_session().await?;
 
     Ok(())
+}
+
+pub async fn list_ocr_model_files(dir_path: PathBuf) -> Result<Vec<String>, String> {
+    let mut entries = tokio::fs::read_dir(&dir_path)
+        .await
+        .map_err(|e| format!("[list_ocr_model_files] Failed to read dir: {}", e))?;
+
+    let mut files = Vec::new();
+    while let Ok(Some(entry)) = entries.next_entry().await {
+        let file_name = entry.file_name();
+        if let Some(name) = file_name.to_str() {
+            if name.ends_with(".onnx") {
+                files.push(name.to_string());
+            }
+        }
+    }
+    files.sort();
+    Ok(files)
 }

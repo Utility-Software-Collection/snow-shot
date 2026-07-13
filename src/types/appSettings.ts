@@ -178,6 +178,17 @@ export enum DoubleClickAction {
 	None = "none",
 }
 
+export enum DragOutsideSelectRectAction {
+	/** 重绘选区 */
+	RedrawSelection = "modifySelection",
+	/** 调整选区 */
+	AdjustSelection = "moveSelection",
+	/** 移动选区 */
+	MoveSelection = "moveSelectionInside",
+	/** 无操作 */
+	None = "none",
+}
+
 export enum FixedContentDoubleClickAction {
 	/** 切换缩略模式 */
 	SwitchThumbnail = "switchThumbnail",
@@ -220,8 +231,18 @@ export enum ColorPickerShowMode {
 
 export enum OcrModel {
 	RapidOcrV4 = "RapidOcrV4",
-	RapidOcrV5 = "RapidOcrV5",
 }
+
+export type CustomOcrModelConfig = {
+	/** 模型名称 */
+	model_name: string;
+	/** 检测模型文件名 */
+	det_model: string;
+	/** 识别模型文件名 */
+	rec_model: string;
+	/** 方向分类模型文件名 */
+	cls_model: string;
+};
 
 export enum KeyDisplayDirection {
 	Horizontal = "horizontal",
@@ -411,7 +432,9 @@ export type AppSettingsData = {
 	};
 	[AppSettingsGroup.FunctionOcr]: {
 		/** 文本识别模型 */
-		ocrModel: OcrModel;
+		ocrModel: string;
+		/** 自定义文本识别模型配置列表 */
+		customOcrModelConfigList: CustomOcrModelConfig[];
 		/** 将图片转为 HTML 的视觉理解模型 */
 		htmlVisionModel: string;
 		/** 图片转为 HTML 的 System 提示词 */
@@ -452,6 +475,8 @@ export type AppSettingsData = {
 		fullScreenCopyToClipboard: boolean;
 		/** 双击后执行 */
 		doubleClickAction: DoubleClickAction;
+		/** 选区外拖动 */
+		dragOutsideSelectRectAction: DragOutsideSelectRectAction;
 		/** 复制图片文件到剪贴板 */
 		copyImageFileToClipboard: boolean;
 		/** 保存到云端 */

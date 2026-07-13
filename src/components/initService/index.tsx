@@ -15,7 +15,7 @@ import {
 } from "@/constants/pluginService";
 import { usePluginServiceContext } from "@/contexts/pluginServiceContext";
 import { useAppSettingsLoad } from "@/hooks/useAppSettingsLoad";
-import { type AppSettingsData, AppSettingsGroup } from "@/types/appSettings";
+import { type AppSettingsData, AppSettingsGroup, OcrModel } from "@/types/appSettings";
 import { CaptureHistory } from "@/utils/captureHistory";
 import { appWarn } from "@/utils/log";
 
@@ -67,9 +67,27 @@ export const InitService = () => {
 			hasInitOcr.current = true;
 
 			if (pluginConfigRef.current) {
+				const ocrSettings = appSettings[AppSettingsGroup.FunctionOcr];
+				let detModel: string | null = null;
+				let clsModel: string | null = null;
+				let recModel: string | null = null;
+
+				if (ocrSettings.ocrModel !== OcrModel.RapidOcrV4) {
+					const customConfig = ocrSettings.customOcrModelConfigList.find(
+						(c) => c.model_name === ocrSettings.ocrModel,
+					);
+					if (customConfig) {
+						detModel = customConfig.det_model || null;
+						clsModel = customConfig.cls_model || null;
+						recModel = customConfig.rec_model || null;
+					}
+				}
+
 				ocrInit(
 					await pluginConfigRef.current.getPluginDirPath(PLUGIN_ID_RAPID_OCR),
-					appSettings[AppSettingsGroup.FunctionOcr].ocrModel,
+					detModel,
+					clsModel,
+					recModel,
 					appSettings[AppSettingsGroup.SystemScreenshot].ocrHotStart,
 					appSettings[AppSettingsGroup.SystemScreenshot].ocrModelWriteToMemory,
 				);

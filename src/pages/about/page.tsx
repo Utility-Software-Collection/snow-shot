@@ -31,17 +31,14 @@ import { getCommitSha } from "@/commands/core";
 import { getLatestVersion } from "@/components/checkVersion";
 
 const { Title, Paragraph, Text } = Typography;
-const forkAuthorUrl = "https://github.com/Utility-Software-Collection";
+const forkAuthorUrl = "https://github.com/xiaofeiTM233";
 const originalRepositoryUrl = "https://github.com/mg-chao/snow-shot";
-const forkRepositoryUrl =
-	"https://github.com/Utility-Software-Collection/snow-shot";
-const githubIssuesUrl =
-	"https://github.com/Utility-Software-Collection/snow-shot/issues";
-const forkReleasesUrl =
-	"https://github.com/Utility-Software-Collection/snow-shot/releases";
+const forkRepositoryUrl = "https://github.com/xiaofeiTM233/snow-shot";
+const githubIssuesUrl = "https://github.com/xiaofeiTM233/snow-shot/issues";
+const forkReleasesUrl = "https://github.com/xiaofeiTM233/snow-shot/releases";
 const forkLatestReleaseUrl = `${forkReleasesUrl}/latest`;
 const forkLatestReleaseApiUrl =
-	"https://api.github.com/repos/Utility-Software-Collection/snow-shot/releases/latest";
+	"https://api.github.com/repos/xiaofeiTM233/snow-shot/releases/latest";
 
 type GithubRelease = {
 	html_url: string;

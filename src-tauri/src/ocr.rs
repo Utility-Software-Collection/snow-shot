@@ -3,21 +3,25 @@ use std::path::PathBuf;
 use tauri::command;
 use tokio::sync::Mutex;
 
-use snow_shot_app_services::ocr_service::{OcrModel, OcrService};
+use snow_shot_app_services::ocr_service::OcrService;
 use snow_shot_tauri_commands_ocr::OcrDetectResult;
 
 #[command]
 pub async fn ocr_init(
     ocr_instance: tauri::State<'_, Mutex<OcrService>>,
     orc_plugin_path: PathBuf,
-    model: OcrModel,
+    det_model: Option<String>,
+    cls_model: Option<String>,
+    rec_model: Option<String>,
     hot_start: bool,
     model_write_to_memory: bool,
 ) -> Result<(), String> {
     snow_shot_tauri_commands_ocr::ocr_init(
         orc_plugin_path,
         ocr_instance,
-        model,
+        det_model,
+        cls_model,
+        rec_model,
         hot_start,
         model_write_to_memory,
     )
@@ -54,4 +58,9 @@ pub async fn ocr_detect_with_shared_buffer(
 #[command]
 pub async fn ocr_release(ocr_instance: tauri::State<'_, Mutex<OcrService>>) -> Result<(), String> {
     snow_shot_tauri_commands_ocr::ocr_release(ocr_instance).await
+}
+
+#[command]
+pub async fn list_ocr_model_files(dir_path: PathBuf) -> Result<Vec<String>, String> {
+    snow_shot_tauri_commands_ocr::list_ocr_model_files(dir_path).await
 }

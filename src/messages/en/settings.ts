@@ -567,10 +567,8 @@ export const settings = {
 	"settings.systemSettings.screenshotSettings.tryGetElementByFocus.always":
 		"Always",
 	"settings.systemSettings.screenshotSettings.ocrModel": "OCR Model",
-	"settings.systemSettings.screenshotSettings.ocrModel.rapidOcrV4":
-		"Rapid OCR V4",
-	"settings.systemSettings.screenshotSettings.ocrModel.rapidOcrV5":
-		"Rapid OCR V5",
+	"settings.systemSettings.screenshotSettings.ocrModel.paddleOcrV4":
+		"PaddleOCR V4",
 	"settings.systemSettings.screenshotSettings.ocrHotStart": "OCR Hot Start",
 	"settings.systemSettings.screenshotSettings.ocrHotStart.tip":
 		"Preload OCR model to improve recognition speed, but increases memory usage",
@@ -662,6 +660,15 @@ export const settings = {
 	"settings.functionSettings.ocrSettings.htmlVisionModel": "Vision Model",
 	"settings.functionSettings.ocrSettings.htmlVisionModel.tip":
 		"Vision model for converting images to HTML",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig": "OCR Model Configuration",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.tip":
+		"Download ONNX model files from {link} and place them in the plugin data directory, then configure OCR models here",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.tip.link": "this repository",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.add": "Add OCR Model Config",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.modelName": "Model Name",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.detModel": "Detection(det)",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.recModel": "Recognition(rec)",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.clsModel": "Orientation(cls)",
 	"settings.functionSettings.ocrSettings.htmlVisionModel.default": "Default",
 	"settings.functionSettings.ocrSettings.htmlVisionModel.default.tip":
 		"Use the first vision model by default",

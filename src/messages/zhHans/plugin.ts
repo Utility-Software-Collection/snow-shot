@@ -22,4 +22,5 @@ export const plugin = {
 	"plugin.install": "安装",
 	"plugin.uninstall": "卸载",
 	"plugin.forceInstall": "重新安装",
+	"plugin.openDataDir": "打开目录",
 };

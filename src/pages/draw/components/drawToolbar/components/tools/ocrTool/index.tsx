@@ -4,6 +4,7 @@ import { useIntl } from "react-intl";
 import { DrawStatePublisher } from "@/components/drawCore/extra";
 import {
 	OcrTranslateIcon,
+	TranslationIcon,
 	VisionMarkdownIcon,
 	VisionModelHtmlIcon,
 } from "@/components/icons";
@@ -30,6 +31,7 @@ export const isOcrTool = (drawState: DrawState) => {
 const OcrTool: React.FC<{
 	onSwitchOcrResult: (ocrResultType: OcrResultType) => void;
 	onTranslate: () => void;
+	onTranslateOcrToPage: () => void;
 	onConvertImageToHtml: () => void;
 	onConvertImageToMarkdown: () => void;
 	currentOcrResult:
@@ -45,6 +47,7 @@ const OcrTool: React.FC<{
 }> = ({
 	onSwitchOcrResult,
 	onTranslate,
+	onTranslateOcrToPage,
 	onConvertImageToHtml,
 	onConvertImageToMarkdown,
 	currentOcrResult,
@@ -110,6 +113,18 @@ const OcrTool: React.FC<{
 							/>,
 						]
 					: []),
+				<Button
+					disabled={!ocrResult}
+					type="text"
+					icon={<TranslationIcon />}
+					onClick={() => {
+						onTranslateOcrToPage();
+					}}
+					title={intl.formatMessage({
+						id: "draw.ocrDetect.openTranslation",
+					})}
+					key="openTranslation"
+				/>,
 				...(isReadyStatus?.(PLUGIN_ID_AI_CHAT)
 					? [
 							<Button
