@@ -12,21 +12,32 @@
 
 <img width="64%" src="/docs/imgs/snow_shot_home.webp" style="margin-bottom: 24px;">
 
-![GitHub Release](https://img.shields.io/github/v/release/mg-chao/snow-shot?label=version)
-![GitHub License](https://img.shields.io/github/license/mg-chao/snow-shot)
+![GitHub Release](https://img.shields.io/github/v/release/Utility-Software-Collection/snow-shot?label=version)
+![GitHub License](https://img.shields.io/github/license/Utility-Software-Collection/snow-shot)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-lightgrey)
-![GitHub Repo stars](https://img.shields.io/github/stars/mg-chao/snow-shot?style=social)
-![GitHub forks](https://img.shields.io/github/forks/mg-chao/snow-shot?style=social)
-![GitHub watchers](https://img.shields.io/github/watchers/mg-chao/snow-shot?style=social)
-![Downloads](https://img.shields.io/github/downloads/mg-chao/snow-shot/total?label=downloads)
-![GitHub Issues](https://img.shields.io/github/issues/mg-chao/snow-shot)
-![GitHub Pull Requests](https://img.shields.io/github/issues-pr/mg-chao/snow-shot)
-![Last Commit](https://img.shields.io/github/last-commit/mg-chao/snow-shot)
-![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/mg-chao/snow-shot)
-[![Lines Of Code](https://tokei.rs/b1/github/mg-chao/snow-shot?category=code)](https://github.com/mg-chao/snow-shot)
+![GitHub Repo stars](https://img.shields.io/github/stars/Utility-Software-Collection/snow-shot?style=social)
+![GitHub forks](https://img.shields.io/github/forks/Utility-Software-Collection/snow-shot?style=social)
+![GitHub watchers](https://img.shields.io/github/watchers/Utility-Software-Collection/snow-shot?style=social)
+![Downloads](https://img.shields.io/github/downloads/Utility-Software-Collection/snow-shot/total?label=downloads)
+![GitHub Issues](https://img.shields.io/github/issues/Utility-Software-Collection/snow-shot)
+![GitHub Pull Requests](https://img.shields.io/github/issues-pr/Utility-Software-Collection/snow-shot)
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Utility-Software-Collection/snow-shot)
+[![Lines Of Code](https://tokei.rs/b1/github/Utility-Software-Collection/snow-shot?category=code)](https://github.com/Utility-Software-Collection/snow-shot)
 
 </div>
 
+# 重要的事
+
+> 原作在本项目主分支的提交截止于[2025年11月8日](https://github.com/mg-chao/snow-shot/commit/c7f2d9fe3114ad0dba6e5efdfe4bd8ecbc1f1de3)，在此后的各个渠道都无法联系到原作者
+>
+>本项目Fork于 [xiaofeiTM233的新维护分支](https://github.com/xiaofeiTM233/snow-shot) ，xiaofei的分支在原作的基础上，进行了大量优化和改进，并添加了新的功能，以提供更好的用户体验
+>关于xiaofei分支的介绍可以前往 [此处](https://github.com/mg-chao/snow-shot/issues/1000) 查看
+>
+>本项目在xiaofei的基础上，进行了进一步的开发和改进，添加了新的功能项
+>
+>项目(xiaofei)：[https://github.com/xiaofeiTM233/snow-shot](https://github.com/xiaofeiTM233/snow-shot)
+>
+>原项目：[https://github.com/mg-chao/snow-shot](https://github.com/mg-chao/snow-shot)
 
 ## 软件介绍
 
@@ -41,20 +52,29 @@ Snow Shot 追求简单高效的使用体验，希望每个用户都能依照直�
 
 **访问[使用说明](https://snowshot.top/guide/index.html)获取更多功能信息**
 
-## ⭐ 如果你感觉有所帮助不妨给我们点击 star 支持一下~
-<img width="1000" height="247" alt="Click Star" src="/docs/imgs/guide-star.webp" />
+## 本分支新增
+
+- 独立打码工具，保留原有滤镜工具
+- 工具栏预览设置页，方便集中调整截图与贴图绘制工具栏
+- 关于页补充分支信息、仓库入口与 Release 检查入口
+- 更完整的 OCR 配置能力，支持外部 OCR API、自定义模型、热启动和结果主题跟随
+- 支持 WebDAV 云端上传，配合截图保存流程使用
 
 ## 下载安装
 
-访问我们的官网：[下载安装](https://snowshot.top/download/index.html)
+访问Github Release：[下载安装](https://github.com/Utility-Software-Collection/snow-shot/releases)
 
 ## 特别鸣谢
 
-[果核剥壳 - 互联网的净土](https://www.ghxi.com/)
-[玄夜の资源小站](https://www.sakuraxy.top/)
-[资源汇社区](https://space.bilibili.com/175870152)
-[FreeDw资源库](https://space.bilibili.com/383210848)
-[大象老师资源库](https://space.bilibili.com/577256311)
+原项目：[https://github.com/mg-chao/snow-shot](https://github.com/mg-chao/snow-shot)  
+本分支上游项目：[https://github.com/xiaofeiTM233/snow-shot](https://github.com/xiaofeiTM233/snow-shot)  
+
+宣传：    
+[果核剥壳 - 互联网的净土](https://www.ghxi.com/)  
+[玄夜の资源小站](https://www.sakuraxy.top/)  
+[资源汇社区](https://space.bilibili.com/175870152)  
+[FreeDw资源库](https://space.bilibili.com/383210848)  
+[大象老师资源库](https://space.bilibili.com/577256311)  
 
 真的非常感谢，为项目带来了大量关注~
 
@@ -64,10 +84,7 @@ Snow Shot 追求简单高效的使用体验，希望每个用户都能依照直�
 
 如果您在使用过程中遇到任何问题，或有功能建议，欢迎通过以下方式交流反馈：
 
-- 提交 [Issue](https://github.com/mg-chao/snow-shot/issues)
-- B 站账号 [3N0W](https://space.bilibili.com/3546897042114689)
-- QQ 交流群 [974311403](https://qm.qq.com/q/cyUPEV4nwk)
-- [了解更多](https://snowshot.top/community/index.html)
+- 提交 [Issue](https://github.com/Utility-Software-Collection/snow-shot/issues)
 
 ## 文档
 
