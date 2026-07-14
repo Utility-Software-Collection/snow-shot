@@ -22,7 +22,6 @@ import { defaultAppFunctionConfigs } from "@/constants/appFunction";
 import { defaultAppSettingsData } from "@/constants/appSettings";
 import { defaultCommonKeyEventSettings } from "@/constants/commonKeyEvent";
 import { defaultDrawToolbarKeyEventSettings } from "@/constants/drawToolbarKeyEvent";
-import { PLUGIN_ID_RAPID_OCR } from "@/constants/pluginService";
 import { normalizeToolbarToolOrder } from "@/constants/toolbarToolOrder";
 import { AppContext } from "@/contexts/appContext";
 import {
@@ -41,6 +40,7 @@ import {
 	type AppSettingsFixedContentInitialPosition,
 	AppSettingsGroup,
 	AppSettingsLanguage,
+	AppSettingsRenderEngine,
 	AppSettingsTheme,
 	type CloudSaveUrlFormat,
 	CloudSaveUrlType,
@@ -70,6 +70,7 @@ import { DrawState } from "@/types/draw";
 import { ImageFormat } from "@/types/utils/file";
 import { getConfigDirPath } from "@/utils/environment";
 import { appError, appWarn, formatErrorDetails } from "@/utils/log";
+import { isOcrServiceAvailable } from "@/utils/ocr";
 
 const getFilePath = async (group: AppSettingsGroup) => {
 	const configDirPath = await getConfigDirPath();
@@ -601,7 +602,11 @@ const AppSettingsContextProviderCore: React.FC<{
 						key === DrawToolbarKeyEventKey.OcrDetectTool ||
 						key === DrawToolbarKeyEventKey.OcrTranslateTool
 					) {
-						return isReady?.(PLUGIN_ID_RAPID_OCR);
+						return isOcrServiceAvailable(
+							appSettingsRef.current[AppSettingsGroup.FunctionOcr] ??
+								defaultAppSettingsData[AppSettingsGroup.FunctionOcr],
+							isReady,
+						);
 					}
 
 					return true;
@@ -850,6 +855,21 @@ const AppSettingsContextProviderCore: React.FC<{
 						? newSettings.customOcrModelConfigList
 						: (prevSettings?.customOcrModelConfigList ??
 							defaultAppSettingsData[group].customOcrModelConfigList),
+					externalOcrApiConfigList: Array.isArray(
+						newSettings?.externalOcrApiConfigList,
+					)
+						? newSettings.externalOcrApiConfigList.map((item) => ({
+								model_name: `${item.model_name ?? ""}`,
+								api_uri: `${item.api_uri ?? ""}`,
+								api_key: `${item.api_key ?? ""}`,
+							}))
+						: (prevSettings?.externalOcrApiConfigList ??
+							defaultAppSettingsData[group].externalOcrApiConfigList),
+					ocrResultFollowTheme:
+						typeof newSettings?.ocrResultFollowTheme === "boolean"
+							? newSettings.ocrResultFollowTheme
+							: (prevSettings?.ocrResultFollowTheme ??
+								defaultAppSettingsData[group].ocrResultFollowTheme),
 				};
 			} else if (group === AppSettingsGroup.FunctionChat) {
 				newSettings = newSettings as AppSettingsData[typeof group];
@@ -865,13 +885,13 @@ const AppSettingsContextProviderCore: React.FC<{
 								defaultAppSettingsData[group].autoCreateNewSession),
 					chatApiConfigList: Array.isArray(newSettings?.chatApiConfigList)
 						? newSettings.chatApiConfigList.map((item) => ({
-							api_uri: `${item.api_uri ?? ""}`,
-							api_key: `${item.api_key ?? ""}`,
-							api_model: `${item.api_model ?? ""}`,
-							model_name: `${item.model_name ?? ""}`,
-							support_thinking: !!item.support_thinking,
-							support_vision: !!item.support_vision,
-						}))
+								api_uri: `${item.api_uri ?? ""}`,
+								api_key: `${item.api_key ?? ""}`,
+								api_model: `${item.api_model ?? ""}`,
+								model_name: `${item.model_name ?? ""}`,
+								support_thinking: !!item.support_thinking,
+								support_vision: !!item.support_vision,
+							}))
 						: (prevSettings?.chatApiConfigList ??
 							defaultAppSettingsData[group].chatApiConfigList),
 					autoCreateNewSessionOnCloseWindow:
@@ -931,15 +951,15 @@ const AppSettingsContextProviderCore: React.FC<{
 						newSettings?.translationApiConfigList,
 					)
 						? newSettings.translationApiConfigList.map((item) => ({
-							api_uri: `${item.api_uri ?? ""}`,
-							api_key: `${item.api_key ?? ""}`,
-							api_type: item.api_type,
-							deepl_prefer_quality_optimized:
-								"deepl_prefer_quality_optimized" in item &&
+								api_uri: `${item.api_uri ?? ""}`,
+								api_key: `${item.api_key ?? ""}`,
+								api_type: item.api_type,
+								deepl_prefer_quality_optimized:
+									"deepl_prefer_quality_optimized" in item &&
 									typeof item.deepl_prefer_quality_optimized === "boolean"
-									? item.deepl_prefer_quality_optimized
-									: false,
-						}))
+										? item.deepl_prefer_quality_optimized
+										: false,
+							}))
 						: (prevSettings?.translationApiConfigList ??
 							defaultAppSettingsData[group].translationApiConfigList),
 					sourceLanguage:
@@ -959,7 +979,7 @@ const AppSettingsContextProviderCore: React.FC<{
 								defaultAppSettingsData[group].translationDomain),
 					translationType:
 						typeof newSettings?.translationType === "number" ||
-							typeof newSettings?.translationType === "string"
+						typeof newSettings?.translationType === "string"
 							? newSettings.translationType
 							: (prevSettings?.translationType ??
 								defaultAppSettingsData[group].translationType),
@@ -1026,6 +1046,11 @@ const AppSettingsContextProviderCore: React.FC<{
 						typeof newSettings?.saveToCloud === "boolean"
 							? newSettings.saveToCloud
 							: (prevSettings?.saveToCloud ?? false),
+					autoSaveToCloud:
+						typeof newSettings?.autoSaveToCloud === "boolean"
+							? newSettings.autoSaveToCloud
+							: (prevSettings?.autoSaveToCloud ??
+								defaultAppSettingsData[group].autoSaveToCloud),
 					cloudSaveUrlType:
 						typeof newSettings?.cloudSaveUrlType === "string"
 							? (newSettings.cloudSaveUrlType as CloudSaveUrlType)
@@ -1064,6 +1089,26 @@ const AppSettingsContextProviderCore: React.FC<{
 						typeof newSettings?.s3ForcePathStyle === "boolean"
 							? newSettings.s3ForcePathStyle
 							: (prevSettings?.s3ForcePathStyle ?? false),
+					webdavUrl:
+						typeof newSettings?.webdavUrl === "string"
+							? newSettings.webdavUrl
+							: (prevSettings?.webdavUrl ??
+								defaultAppSettingsData[group].webdavUrl),
+					webdavUsername:
+						typeof newSettings?.webdavUsername === "string"
+							? newSettings.webdavUsername
+							: (prevSettings?.webdavUsername ??
+								defaultAppSettingsData[group].webdavUsername),
+					webdavPassword:
+						typeof newSettings?.webdavPassword === "string"
+							? newSettings.webdavPassword
+							: (prevSettings?.webdavPassword ??
+								defaultAppSettingsData[group].webdavPassword),
+					webdavPathPrefix:
+						typeof newSettings?.webdavPathPrefix === "string"
+							? newSettings.webdavPathPrefix
+							: (prevSettings?.webdavPathPrefix ??
+								defaultAppSettingsData[group].webdavPathPrefix),
 					saveFileDirectory:
 						typeof newSettings?.saveFileDirectory === "string"
 							? newSettings.saveFileDirectory
@@ -1404,6 +1449,11 @@ const AppSettingsContextProviderCore: React.FC<{
 							? newSettings.historySaveEditResult
 							: (prevSettings?.historySaveEditResult ??
 								defaultAppSettingsData[group].historySaveEditResult),
+					exportCaptureHistoryAsZip:
+						typeof newSettings?.exportCaptureHistoryAsZip === "boolean"
+							? newSettings.exportCaptureHistoryAsZip
+							: (prevSettings?.exportCaptureHistoryAsZip ??
+								defaultAppSettingsData[group].exportCaptureHistoryAsZip),
 					correctColorFilter:
 						typeof newSettings?.correctColorFilter === "boolean"
 							? newSettings.correctColorFilter
@@ -1442,6 +1492,12 @@ const AppSettingsContextProviderCore: React.FC<{
 							? Math.max(Math.min(3, newSettings.hotLoadPageCount), 0)
 							: (prevSettings?.hotLoadPageCount ??
 								defaultAppSettingsData[group].hotLoadPageCount),
+					renderEngine:
+						newSettings?.renderEngine === AppSettingsRenderEngine.WebGPU ||
+						newSettings?.renderEngine === AppSettingsRenderEngine.WebGL
+							? newSettings.renderEngine
+							: (prevSettings?.renderEngine ??
+								defaultAppSettingsData[group].renderEngine),
 				};
 			} else if (group === AppSettingsGroup.FunctionGlobalShortcut) {
 				newSettings = newSettings as AppSettingsData[typeof group];
@@ -1482,13 +1538,13 @@ const AppSettingsContextProviderCore: React.FC<{
 				ignorePublisher,
 			);
 
-		if (saveToFile) {
-			if (debounce) {
-				writeAppSettingsDebounce(group, settings, syncAllWindow, val);
-			} else {
-				writeAppSettings(group, settings, syncAllWindow, val);
+			if (saveToFile) {
+				if (debounce) {
+					writeAppSettingsDebounce(group, settings, syncAllWindow, val);
+				} else {
+					writeAppSettings(group, settings, syncAllWindow, val);
+				}
 			}
-		}
 
 			return settings;
 		},

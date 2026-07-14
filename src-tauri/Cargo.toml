@@ -21,7 +21,7 @@ name = "snow-shot"
 version = "0.9.0-beta"
 description = "Simple and elegant screenshot tool"
 authors = ["mg-chao <chao@mgchao.top>"]
-repository = "https://github.com/xiaofeiTM233/snow-shot"
+repository = "https://github.com/Utility-Software-Collection/snow-shot"
 edition = "2024"
 rust-version = "1.90"
 

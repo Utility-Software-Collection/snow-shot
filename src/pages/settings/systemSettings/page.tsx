@@ -50,6 +50,7 @@ import { useStateRef } from "@/hooks/useStateRef";
 import {
 	type AppSettingsData,
 	AppSettingsGroup,
+	AppSettingsRenderEngine,
 	HdrColorAlgorithm,
 	HistoryValidDuration,
 } from "@/types/appSettings";
@@ -232,6 +233,22 @@ export const SystemSettingsPage = () => {
 		}
 
 		return options;
+	}, [intl]);
+	const renderEngineOptions = useMemo<SelectProps["options"]>(() => {
+		return [
+			{
+				label: intl.formatMessage({
+					id: "settings.systemSettings.coreSettings.renderEngine.webgl",
+				}),
+				value: AppSettingsRenderEngine.WebGL,
+			},
+			{
+				label: intl.formatMessage({
+					id: "settings.systemSettings.coreSettings.renderEngine.webgpu",
+				}),
+				value: AppSettingsRenderEngine.WebGPU,
+			},
+		];
 	}, [intl]);
 
 	const hdrColorAlgorithmOptions = useMemo((): SelectProps["options"] => {
@@ -533,6 +550,22 @@ export const SystemSettingsPage = () => {
 									/>
 								}
 								name="historySaveEditResult"
+								valuePropName="checked"
+							/>
+						</Col>
+						<Col span={12}>
+							<ProFormSwitch
+								label={
+									<IconLabel
+										label={
+											<FormattedMessage id="settings.systemSettings.screenshotSettings.exportCaptureHistoryAsZip" />
+										}
+										tooltipTitle={
+											<FormattedMessage id="settings.systemSettings.screenshotSettings.exportCaptureHistoryAsZip.tip" />
+										}
+									/>
+								}
+								name="exportCaptureHistoryAsZip"
 								valuePropName="checked"
 							/>
 						</Col>
@@ -1024,6 +1057,23 @@ export const SystemSettingsPage = () => {
 								fieldProps={{
 									precision: 0,
 								}}
+							/>
+						</Col>
+						<Col span={12}>
+							<ProFormSelect
+								label={
+									<IconLabel
+										label={
+											<FormattedMessage id="settings.systemSettings.coreSettings.renderEngine" />
+										}
+										tooltipTitle={
+											<FormattedMessage id="settings.systemSettings.coreSettings.renderEngine.tip" />
+										}
+									/>
+								}
+								name="renderEngine"
+								options={renderEngineOptions}
+								allowClear={false}
 							/>
 						</Col>
 					</Row>

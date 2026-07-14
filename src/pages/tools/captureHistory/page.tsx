@@ -1,20 +1,29 @@
 "use client";
 
-import { DeleteOutlined, ReloadOutlined } from "@ant-design/icons";
+import {
+	DeleteOutlined,
+	ExportOutlined,
+	ReloadOutlined,
+} from "@ant-design/icons";
 import { type ActionType, ProList } from "@ant-design/pro-components";
 import { convertFileSrc } from "@tauri-apps/api/core";
+import { join as joinPath } from "@tauri-apps/api/path";
+import * as dialog from "@tauri-apps/plugin-dialog";
+import { readFile } from "@tauri-apps/plugin-fs";
 import { Button, Popconfirm, Space, Tag, theme } from "antd";
 import dayjs from "dayjs";
 import type { Key } from "react";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
+import { copyFile, writeFile } from "@/commands/file";
 import { EventListenerContext } from "@/components/eventListener";
+import { AntdContext } from "@/contexts/antdContext";
 import { AppSettingsPublisher } from "@/contexts/appSettingsActionContext";
 import { executeScreenshot } from "@/functions/screenshot";
 import { useAppSettingsLoad } from "@/hooks/useAppSettingsLoad";
 import { useStateRef } from "@/hooks/useStateRef";
 import { useStateSubscriber } from "@/hooks/useStateSubscriber";
-import type { AppSettingsData } from "@/types/appSettings";
+import { type AppSettingsData, AppSettingsGroup } from "@/types/appSettings";
 import {
 	type CaptureHistoryItem,
 	CaptureHistorySource,
@@ -29,6 +38,141 @@ import { CaptureHistoryItemActions } from "./components/captureHistoryItemAction
 import { CaptureHistoryItemPreview } from "./components/captureHistoryItemPreview";
 import type { CaptureHistoryRecordItem } from "./extra";
 
+const textEncoder = new TextEncoder();
+
+const crc32Table = new Uint32Array(256);
+for (let i = 0; i < crc32Table.length; i++) {
+	let crc = i;
+	for (let j = 0; j < 8; j++) {
+		crc = crc & 1 ? 0xedb88320 ^ (crc >>> 1) : crc >>> 1;
+	}
+	crc32Table[i] = crc >>> 0;
+}
+
+const getCrc32 = (data: Uint8Array) => {
+	let crc = 0xffffffff;
+	for (const byte of data) {
+		crc = crc32Table[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+	}
+	return (crc ^ 0xffffffff) >>> 0;
+};
+
+const getDosDateTime = (timestamp: number) => {
+	const date = new Date(timestamp || Date.now());
+	const year = Math.max(1980, Math.min(date.getFullYear(), 2107));
+	return {
+		dosDate:
+			((year - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate(),
+		dosTime:
+			(date.getHours() << 11) |
+			(date.getMinutes() << 5) |
+			Math.floor(date.getSeconds() / 2),
+	};
+};
+
+const writeUint16 = (dataView: DataView, offset: number, value: number) => {
+	dataView.setUint16(offset, value, true);
+};
+
+const writeUint32 = (dataView: DataView, offset: number, value: number) => {
+	dataView.setUint32(offset, value >>> 0, true);
+};
+
+const getUniqueZipEntryName = (fileName: string, usedNames: Set<string>) => {
+	const safeFileName = fileName.replace(/[\\/]/g, "_") || "capture.png";
+	let entryName = safeFileName;
+	let index = 1;
+	const dotIndex = safeFileName.lastIndexOf(".");
+	const baseName =
+		dotIndex > 0 ? safeFileName.slice(0, dotIndex) : safeFileName;
+	const extension = dotIndex > 0 ? safeFileName.slice(dotIndex) : "";
+	while (usedNames.has(entryName)) {
+		entryName = `${baseName}_${index}${extension}`;
+		index++;
+	}
+	usedNames.add(entryName);
+	return entryName;
+};
+
+const concatUint8Arrays = (arrays: Uint8Array[]) => {
+	const totalLength = arrays.reduce((sum, item) => sum + item.length, 0);
+	const result = new Uint8Array(totalLength);
+	let offset = 0;
+	for (const item of arrays) {
+		result.set(item, offset);
+		offset += item.length;
+	}
+	return result;
+};
+
+const createZipArchive = (
+	entries: { name: string; data: Uint8Array; timestamp: number }[],
+) => {
+	const localParts: Uint8Array[] = [];
+	const centralParts: Uint8Array[] = [];
+	let localOffset = 0;
+
+	for (const entry of entries) {
+		const nameBytes = textEncoder.encode(entry.name);
+		const crc32 = getCrc32(entry.data);
+		const { dosDate, dosTime } = getDosDateTime(entry.timestamp);
+
+		const localHeader = new Uint8Array(30 + nameBytes.length);
+		const localHeaderView = new DataView(localHeader.buffer);
+		writeUint32(localHeaderView, 0, 0x04034b50);
+		writeUint16(localHeaderView, 4, 20);
+		writeUint16(localHeaderView, 6, 0x0800);
+		writeUint16(localHeaderView, 8, 0);
+		writeUint16(localHeaderView, 10, dosTime);
+		writeUint16(localHeaderView, 12, dosDate);
+		writeUint32(localHeaderView, 14, crc32);
+		writeUint32(localHeaderView, 18, entry.data.length);
+		writeUint32(localHeaderView, 22, entry.data.length);
+		writeUint16(localHeaderView, 26, nameBytes.length);
+		writeUint16(localHeaderView, 28, 0);
+		localHeader.set(nameBytes, 30);
+
+		const centralHeader = new Uint8Array(46 + nameBytes.length);
+		const centralHeaderView = new DataView(centralHeader.buffer);
+		writeUint32(centralHeaderView, 0, 0x02014b50);
+		writeUint16(centralHeaderView, 4, 20);
+		writeUint16(centralHeaderView, 6, 20);
+		writeUint16(centralHeaderView, 8, 0x0800);
+		writeUint16(centralHeaderView, 10, 0);
+		writeUint16(centralHeaderView, 12, dosTime);
+		writeUint16(centralHeaderView, 14, dosDate);
+		writeUint32(centralHeaderView, 16, crc32);
+		writeUint32(centralHeaderView, 20, entry.data.length);
+		writeUint32(centralHeaderView, 24, entry.data.length);
+		writeUint16(centralHeaderView, 28, nameBytes.length);
+		writeUint16(centralHeaderView, 30, 0);
+		writeUint16(centralHeaderView, 32, 0);
+		writeUint16(centralHeaderView, 34, 0);
+		writeUint16(centralHeaderView, 36, 0);
+		writeUint32(centralHeaderView, 38, 0);
+		writeUint32(centralHeaderView, 42, localOffset);
+		centralHeader.set(nameBytes, 46);
+
+		localParts.push(localHeader, entry.data);
+		centralParts.push(centralHeader);
+		localOffset += localHeader.length + entry.data.length;
+	}
+
+	const centralDirectory = concatUint8Arrays(centralParts);
+	const endHeader = new Uint8Array(22);
+	const endHeaderView = new DataView(endHeader.buffer);
+	writeUint32(endHeaderView, 0, 0x06054b50);
+	writeUint16(endHeaderView, 4, 0);
+	writeUint16(endHeaderView, 6, 0);
+	writeUint16(endHeaderView, 8, entries.length);
+	writeUint16(endHeaderView, 10, entries.length);
+	writeUint32(endHeaderView, 12, centralDirectory.length);
+	writeUint32(endHeaderView, 16, localOffset);
+	writeUint16(endHeaderView, 20, 0);
+
+	return concatUint8Arrays([...localParts, centralDirectory, endHeader]);
+};
+
 export const CaptureHistoryPage = () => {
 	const intl = useIntl();
 	const [loading, setLoading] = useState(true);
@@ -37,7 +181,9 @@ export const CaptureHistoryPage = () => {
 	>(undefined);
 	const captureHistoryRef = useRef<CaptureHistory | undefined>(undefined);
 	const { token } = theme.useToken();
+	const { message, modal } = useContext(AntdContext);
 	const actionRef = useRef<ActionType>(null);
+	const [exportAllLoading, setExportAllLoading] = useState(false);
 
 	const initedRef = useRef(false);
 	const [getAppSettings] = useStateSubscriber(AppSettingsPublisher, undefined);
@@ -113,6 +259,138 @@ export const CaptureHistoryPage = () => {
 	const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
 
 	const currentFilterDataRef = useRef<CaptureHistoryRecordItem[]>([]);
+	const exportCaptureHistoryToDirectory = useCallback(
+		async (list: CaptureHistoryItem[], exportDirectory: string) => {
+			await Promise.all(
+				list.map(async (item) => {
+					const fileName = item.capture_result_file_name ?? item.file_name;
+					await copyFile(
+						await getCaptureHistoryImageAbsPath(fileName),
+						await joinPath(exportDirectory, fileName),
+					);
+				}),
+			);
+		},
+		[],
+	);
+	const exportCaptureHistoryToZip = useCallback(
+		async (list: CaptureHistoryItem[], zipFilePath: string) => {
+			const usedNames = new Set<string>();
+			const entries = await Promise.all(
+				list.map(async (item) => {
+					const fileName = item.capture_result_file_name ?? item.file_name;
+					const fileData = await readFile(
+						await getCaptureHistoryImageAbsPath(fileName),
+					);
+					return {
+						name: getUniqueZipEntryName(fileName, usedNames),
+						data: fileData,
+						timestamp: item.create_ts,
+					};
+				}),
+			);
+			await writeFile(zipFilePath, createZipArchive(entries));
+		},
+		[],
+	);
+	const handleExportAll = useCallback(async () => {
+		const list = dataSourceRef.current ?? [];
+		if (list.length === 0) {
+			message.info(
+				intl.formatMessage({ id: "tools.captureHistory.exportAll.empty" }),
+			);
+			return;
+		}
+
+		const exportAsZip =
+			getAppSettings()[AppSettingsGroup.SystemScreenshot]
+				.exportCaptureHistoryAsZip;
+
+		setExportAllLoading(true);
+		try {
+			if (exportAsZip) {
+				const exportFile = await dialog.save({
+					title: intl.formatMessage({
+						id: "tools.captureHistory.exportAll.selectZipFile",
+					}),
+					defaultPath: `SnowShot_CaptureHistory_${dayjs().format(
+						"YYYYMMDD_HHmmss",
+					)}.zip`,
+					filters: [
+						{
+							name: "ZIP",
+							extensions: ["zip"],
+						},
+					],
+				});
+				if (!exportFile) {
+					return;
+				}
+
+				await exportCaptureHistoryToZip(
+					list,
+					exportFile.toLowerCase().endsWith(".zip")
+						? exportFile
+						: `${exportFile}.zip`,
+				);
+			} else {
+				const exportDirectory = await dialog.open({
+					directory: true,
+					multiple: false,
+					title: intl.formatMessage({
+						id: "tools.captureHistory.exportAll.selectDirectory",
+					}),
+				});
+				if (!exportDirectory || Array.isArray(exportDirectory)) {
+					return;
+				}
+
+				await exportCaptureHistoryToDirectory(list, exportDirectory);
+			}
+			message.success(
+				intl.formatMessage(
+					{ id: "tools.captureHistory.exportAll.success" },
+					{ count: list.length },
+				),
+			);
+		} catch (error) {
+			appWarn("[CaptureHistoryPage] export all failed", error);
+			message.error(
+				intl.formatMessage({ id: "tools.captureHistory.exportAll.failed" }),
+			);
+		} finally {
+			setExportAllLoading(false);
+		}
+	}, [
+		dataSourceRef,
+		exportCaptureHistoryToDirectory,
+		exportCaptureHistoryToZip,
+		getAppSettings,
+		intl,
+		message,
+	]);
+	const handleClearAll = useCallback(async () => {
+		const confirmed = await modal.confirmWithStatus({
+			title: intl.formatMessage({
+				id: "tools.captureHistory.clearAll.secondConfirm",
+			}),
+			content: intl.formatMessage({
+				id: "tools.captureHistory.clearAll.secondConfirm.content",
+			}),
+			okText: intl.formatMessage({ id: "tools.captureHistory.clearAll" }),
+			okButtonProps: {
+				danger: true,
+			},
+		});
+		if (!confirmed) {
+			return;
+		}
+
+		await captureHistoryRef.current?.clearAll();
+		reloadList();
+		setSelectedRowKeys([]);
+	}, [intl, modal, reloadList]);
+
 	const tableAlertOptionRender = useCallback(() => {
 		return (
 			<Space>
@@ -186,25 +464,35 @@ export const CaptureHistoryPage = () => {
 				className="capture-history-list"
 				actionRef={actionRef}
 				toolBarRender={() => [
+					<Button
+						key="exportAll"
+						type="text"
+						icon={<ExportOutlined />}
+						loading={exportAllLoading}
+						disabled={!dataSource?.length}
+						onClick={handleExportAll}
+					>
+						<FormattedMessage id="tools.captureHistory.exportAll" />
+					</Button>,
 					<div key="clearAll">
 						<Popconfirm
 							key="clearAll"
 							title={
 								<FormattedMessage id="tools.captureHistory.clearAll.confirm" />
 							}
-							onConfirm={async () => {
-								await captureHistoryRef.current?.clearAll();
-								reloadList();
-							}}
+							onConfirm={handleClearAll}
 						>
 							<Button
 								type="text"
 								icon={<DeleteOutlined />}
+								disabled={!dataSource?.length}
 								style={{ color: token.colorError }}
 								title={intl.formatMessage({
 									id: "tools.captureHistory.clearAll",
 								})}
-							/>
+							>
+								<FormattedMessage id="tools.captureHistory.clearAll" />
+							</Button>
 						</Popconfirm>
 					</div>,
 					<Button

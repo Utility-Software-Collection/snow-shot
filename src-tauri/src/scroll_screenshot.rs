@@ -95,10 +95,12 @@ pub async fn scroll_screenshot_get_size(
 #[command]
 pub async fn scroll_screenshot_save_to_file(
     scroll_screenshot_service: tauri::State<'_, Mutex<ScrollScreenshotService>>,
+    scroll_screenshot_image_service: tauri::State<'_, Mutex<ScrollScreenshotImageService>>,
     file_path: String,
 ) -> Result<(), String> {
     snow_shot_tauri_commands_scroll_screenshot::scroll_screenshot_save_to_file(
         scroll_screenshot_service,
+        scroll_screenshot_image_service,
         file_path,
     )
     .await
@@ -108,6 +110,7 @@ pub async fn scroll_screenshot_save_to_file(
 pub async fn scroll_screenshot_save_to_clipboard(
     app: tauri::AppHandle,
     scroll_screenshot_service: tauri::State<'_, Mutex<ScrollScreenshotService>>,
+    scroll_screenshot_image_service: tauri::State<'_, Mutex<ScrollScreenshotImageService>>,
 ) -> Result<(), String> {
     snow_shot_tauri_commands_scroll_screenshot::scroll_screenshot_save_to_clipboard(
         |image| match app.clipboard().write_image(&tauri::image::Image::new(
@@ -122,6 +125,7 @@ pub async fn scroll_screenshot_save_to_clipboard(
             )),
         },
         scroll_screenshot_service,
+        scroll_screenshot_image_service,
     )
     .await
 }
@@ -143,12 +147,14 @@ pub async fn scroll_screenshot_clear(
 #[command]
 pub async fn scroll_screenshot_get_image_data(
     scroll_screenshot_service: tauri::State<'_, Mutex<ScrollScreenshotService>>,
+    scroll_screenshot_image_service: tauri::State<'_, Mutex<ScrollScreenshotImageService>>,
     webview_shared_buffer_state: tauri::State<'_, WebViewSharedBufferState>,
     webview: tauri::Webview,
     force_to_png: Option<bool>,
 ) -> Result<Response, String> {
     snow_shot_tauri_commands_scroll_screenshot::scroll_screenshot_get_image_data(
         scroll_screenshot_service,
+        scroll_screenshot_image_service,
         webview_shared_buffer_state,
         webview,
         force_to_png.unwrap_or(false),

@@ -15,9 +15,14 @@ import {
 } from "@/constants/pluginService";
 import { usePluginServiceContext } from "@/contexts/pluginServiceContext";
 import { useAppSettingsLoad } from "@/hooks/useAppSettingsLoad";
-import { type AppSettingsData, AppSettingsGroup, OcrModel } from "@/types/appSettings";
+import {
+	type AppSettingsData,
+	AppSettingsGroup,
+	OcrModel,
+} from "@/types/appSettings";
 import { CaptureHistory } from "@/utils/captureHistory";
 import { appWarn } from "@/utils/log";
+import { isExternalOcrModel } from "@/utils/ocr";
 
 export const InitService = () => {
 	// 清除无效的截图历史
@@ -62,7 +67,8 @@ export const InitService = () => {
 							.ocrModelWriteToMemory !==
 							prevAppSettings[AppSettingsGroup.SystemScreenshot]
 								.ocrModelWriteToMemory))) &&
-			isReadyStatus(PLUGIN_ID_RAPID_OCR)
+			isReadyStatus(PLUGIN_ID_RAPID_OCR) &&
+			!isExternalOcrModel(appSettings[AppSettingsGroup.FunctionOcr].ocrModel)
 		) {
 			hasInitOcr.current = true;
 

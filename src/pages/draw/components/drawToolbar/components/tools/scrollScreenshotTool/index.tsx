@@ -13,11 +13,7 @@ import {
 	type WheelEventHandler,
 } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
-import {
-	autoScrollThrough,
-	clickThrough,
-	scrollThrough,
-} from "@/commands/core";
+import { clickThrough, scrollThrough } from "@/commands/core";
 import { listenMouseStart, listenMouseStop } from "@/commands/listenKey";
 import {
 	SCROLL_SCREENSHOT_CAPTURE_RESULT_EXTRA_DATA_SIZE,
@@ -45,11 +41,18 @@ import type { ElementRect } from "@/types/commands/screenshot";
 import { DrawState } from "@/types/draw";
 import { getCorrectHdrColorAlgorithm } from "@/utils/appSettings";
 import { appError, appWarn } from "@/utils/log";
-import { getPlatform } from "@/utils/platform";
 import { zIndexs } from "@/utils/zIndex";
 import { SubTools, type SubToolsActionType } from "../../subTools";
 
 const THUMBNAIL_WIDTH = 128;
+const CAPTURE_READY_DELAY = 80;
+const SCROLL_SETTLE_DELAY = 260;
+const AUTO_SCROLL_CAPTURE_INTERVAL = 650;
+
+const waitFor = (time: number) =>
+	new Promise<void>((resolve) => {
+		setTimeout(resolve, time);
+	});
 
 export type ScrollScreenshotActionType = {
 	getScrollScreenshotSubToolContainer: () => HTMLDivElement | null | undefined;
@@ -181,7 +184,7 @@ export const ScrollScreenshot: React.FC<{
 						(positionRectRef.current.max_x - positionRectRef.current.min_x);
 
 			let captuerEdge =
-				currentScrollSize.top_image_size ?? 0 + (edgePosition ?? 0);
+				(currentScrollSize.top_image_size ?? 0) + (edgePosition ?? 0);
 			if (edgePosition > 0) {
 				captuerEdge -= thumbnailHeight / positionScale;
 			}
@@ -240,6 +243,11 @@ export const ScrollScreenshot: React.FC<{
 	const autoScrollThroughIntervalRef = useRef<NodeJS.Timeout | undefined>(
 		undefined,
 	);
+	const pendingAutoScrollCaptureRef = useRef(false);
+	const originCapturedRef = useRef(false);
+	const scrollCaptureQueueRef = useRef<ScrollImageList[]>([]);
+	const processingScrollCaptureQueueRef = useRef(false);
+	const pendingScrollThroughRef = useRef<boolean>(false);
 
 	const stopAutoScrollThrough = useCallback((clearDelay: number = 300) => {
 		if (autoScrollThroughIntervalRef.current) {
@@ -352,31 +360,36 @@ export const ScrollScreenshot: React.FC<{
 	]);
 
 	const pendingCaptureImageListRef = useRef<boolean>(false);
+	const rerunCaptureImageListRef = useRef<boolean>(false);
 	const handleCaptureImageList = useCallback(async () => {
 		if (pendingCaptureImageListRef.current) {
+			rerunCaptureImageListRef.current = true;
 			return;
 		}
 		pendingCaptureImageListRef.current = true;
 
-		let needContinue = true;
-		while (needContinue) {
-			try {
-				needContinue = await handleCaptureImage();
-			} catch (error) {
-				appError("[handleCaptureImageList] error", error);
-				break;
+		do {
+			rerunCaptureImageListRef.current = false;
+
+			let needContinue = true;
+			while (needContinue) {
+				try {
+					needContinue = await handleCaptureImage();
+				} catch (error) {
+					appError("[handleCaptureImageList] error", error);
+					break;
+				}
 			}
-		}
+		} while (rerunCaptureImageListRef.current);
 
 		pendingCaptureImageListRef.current = false;
 	}, [handleCaptureImage]);
 
-	const handleCaptureImageListDebounce = useMemo(() => {
-		return debounce(handleCaptureImageList, 100);
-	}, [handleCaptureImageList]);
-
 	const captureImageCore = useCallback(
-		async (scrollImageList: ScrollImageList) => {
+		async (
+			scrollImageList: ScrollImageList,
+			captureReadyDelay = CAPTURE_READY_DELAY,
+		) => {
 			const selectRect = selectLayerActionRef.current?.getSelectRect();
 			if (!captureBoundingBoxInfoRef.current || !selectRect) {
 				appWarn(
@@ -394,8 +407,9 @@ export const ScrollScreenshot: React.FC<{
 			});
 			setDrawEvent(undefined);
 
-			// 等待 1 帧，确保取色器、工具栏隐藏
-			await new Promise((resolve) => setTimeout(resolve, 17));
+			if (captureReadyDelay > 0) {
+				await waitFor(captureReadyDelay);
+			}
 
 			await scrollScreenshotCapture(
 				scrollImageList,
@@ -407,30 +421,94 @@ export const ScrollScreenshot: React.FC<{
 				getAppSettings()[AppSettingsGroup.SystemScreenshot].correctColorFilter,
 			);
 
-			handleCaptureImageListDebounce();
+			await handleCaptureImageList();
 		},
 		[
 			captureBoundingBoxInfoRef,
 			selectLayerActionRef,
 			setDrawEvent,
-			handleCaptureImageListDebounce,
+			handleCaptureImageList,
 			getAppSettings,
 		],
 	);
 
-	const captureImageDebounce = useMemo(() => {
-		return debounce(captureImageCore, 256);
-	}, [captureImageCore]);
-	const captureImage = useMemo(() => {
-		return throttle(
-			(scrollImageList: ScrollImageList) => {
-				captureImageCore(scrollImageList);
-				captureImageDebounce(scrollImageList);
+	const enableCursorEventsDebounce = useMemo(() => {
+		return debounce(
+			() => {
+				const appWindow = getCurrentWindow();
+				appWindow.setIgnoreCursorEvents(false);
 			},
-			32,
-			{ edges: ["leading", "trailing"] },
+			128 + 128 + 16,
 		);
-	}, [captureImageCore, captureImageDebounce]);
+	}, []);
+
+	const processScrollCaptureQueue = useCallback(async () => {
+		if (processingScrollCaptureQueueRef.current) {
+			return;
+		}
+
+		processingScrollCaptureQueueRef.current = true;
+		setLoading(true);
+
+		try {
+			while (
+				enableScrollThroughRef.current &&
+				scrollCaptureQueueRef.current.length > 0
+			) {
+				const scrollImageList = scrollCaptureQueueRef.current.shift();
+				if (!scrollImageList) {
+					break;
+				}
+
+				if (!originCapturedRef.current) {
+					await captureImageCore(scrollImageList);
+					originCapturedRef.current = true;
+				}
+
+				enableCursorEventsDebounce();
+				pendingScrollThroughRef.current = true;
+				try {
+					await scrollThrough(
+						scrollImageList === ScrollImageList.Bottom ? 1 : -1,
+					);
+				} catch {
+					message.warning(
+						<FormattedMessage id="draw.scrollScreenshot.scrollError" />,
+					);
+				} finally {
+					pendingScrollThroughRef.current = false;
+				}
+
+				await waitFor(SCROLL_SETTLE_DELAY);
+				await captureImageCore(scrollImageList, 0);
+			}
+		} catch (error) {
+			appError("[processScrollCaptureQueue] error", error);
+		} finally {
+			processingScrollCaptureQueueRef.current = false;
+			setLoadingDebounce(false);
+
+			if (
+				enableScrollThroughRef.current &&
+				scrollCaptureQueueRef.current.length > 0
+			) {
+				processScrollCaptureQueue();
+			}
+		}
+	}, [
+		captureImageCore,
+		enableCursorEventsDebounce,
+		message,
+		setLoadingDebounce,
+	]);
+
+	const enqueueScrollCapture = useCallback(
+		(scrollImageList: ScrollImageList) => {
+			scrollCaptureQueueRef.current.push(scrollImageList);
+			processScrollCaptureQueue();
+		},
+		[processScrollCaptureQueue],
+	);
 
 	const [showTip, _setShowTip] = useState(false);
 	const touchAreaTipRef = useRef<HTMLDivElement>(null);
@@ -480,6 +558,7 @@ export const ScrollScreenshot: React.FC<{
 			}
 
 			enableScrollThroughRef.current = true;
+			processScrollCaptureQueue();
 		},
 		[
 			setPositionRect,
@@ -488,68 +567,40 @@ export const ScrollScreenshot: React.FC<{
 			message,
 			intl,
 			setShowTip,
+			processScrollCaptureQueue,
 		],
 	);
 
-	const pendingScrollThroughRef = useRef<boolean>(false);
-
-	const enableCursorEventsDebounce = useMemo(() => {
-		return debounce(
-			() => {
-				const appWindow = getCurrentWindow();
-				appWindow.setIgnoreCursorEvents(false);
-			},
-			128 + 128 + 16,
-		);
-	}, []);
-
 	const onWheel = useCallback<WheelEventHandler<HTMLDivElement>>(
 		(event) => {
+			event.stopPropagation();
+			event.preventDefault();
+
 			if (autoScrollThroughIntervalRef.current) {
 				return;
 			}
 
-			if (!enableScrollThroughRef.current) {
+			if (
+				scrollDirectionRef.current === ScrollDirection.Horizontal &&
+				!event.shiftKey
+			) {
 				return;
 			}
+
+			const scrollImageList =
+				event.deltaY > 0 ? ScrollImageList.Bottom : ScrollImageList.Top;
 
 			// 无论当前是否可见，直接强制隐藏，并且不要设置 setTimeout 把它变回来，一旦开始滚动，提示就应该消失。
 			setShowTip(false);
 
-			// 直接执行截图逻辑，这里的 captureImage 内部调用的 captureImageCore 已经包含了 17ms 的等待，足够让上面的 setShowTip(false) 生效并完成渲染，所以这里直接调用即可。
-			captureImage(
-				event.deltaY > 0 ? ScrollImageList.Bottom : ScrollImageList.Top,
-			);
-
-			if (!pendingScrollThroughRef.current) {
-				if (
-					scrollDirectionRef.current === ScrollDirection.Horizontal &&
-					!event.shiftKey
-				) {
-					return;
-				}
-
-				// 加一个冗余操作，防止鼠标事件被忽略
-				enableCursorEventsDebounce();
-				pendingScrollThroughRef.current = true;
-				scrollThrough(event.deltaY > 0 ? 1 : -1)
-					.catch(() => {
-						message.warning(
-							<FormattedMessage id="draw.scrollScreenshot.scrollError" />,
-						);
-					})
-					.finally(() => {
-						pendingScrollThroughRef.current = false;
-					});
+			if (!enableScrollThroughRef.current) {
+				scrollCaptureQueueRef.current.push(scrollImageList);
+				return;
 			}
+
+			enqueueScrollCapture(scrollImageList);
 		},
-		[
-			captureImage,
-			enableCursorEventsDebounce,
-			message,
-			scrollDirectionRef,
-			setShowTip,
-		],
+		[enqueueScrollCapture, scrollDirectionRef, setShowTip],
 	);
 
 	const tryEnableAutoScrollThroughCore = useCallback(() => {
@@ -568,26 +619,32 @@ export const ScrollScreenshot: React.FC<{
 						if (autoScrollThroughIntervalRef.current) {
 							clearInterval(autoScrollThroughIntervalRef.current);
 						}
-						await getCurrentWindow().setIgnoreCursorEvents(true);
 						pendingEnableAutoScrollThroughClickRef.current = false;
 						autoScrollThroughIntervalRef.current = setInterval(async () => {
-							await getCurrentWindow().setIgnoreCursorEvents(true);
-							await autoScrollThrough(
-								scrollDirectionRef.current === ScrollDirection.Horizontal
-									? "horizontal"
-									: "vertical",
-								getPlatform() === "windows" ? 1 : 1,
-							);
-							enableCursorEventsDebounce();
-							captureImageCore(ScrollImageList.Bottom);
-						}, 150);
+							if (
+								pendingAutoScrollCaptureRef.current ||
+								processingScrollCaptureQueueRef.current ||
+								scrollCaptureQueueRef.current.length > 0
+							) {
+								return;
+							}
+
+							pendingAutoScrollCaptureRef.current = true;
+							try {
+								enqueueScrollCapture(ScrollImageList.Bottom);
+							} catch (error) {
+								appError("[tryEnableAutoScrollThroughCore] error", error);
+							} finally {
+								pendingAutoScrollCaptureRef.current = false;
+							}
+						}, AUTO_SCROLL_CAPTURE_INTERVAL);
 					}
 					setPendingEnableAutoScrollThroughClickRef.current = undefined;
 				},
 				300,
 			);
 		}
-	}, [captureImageCore, enableCursorEventsDebounce, scrollDirectionRef]);
+	}, [enqueueScrollCapture]);
 
 	const { addListener, removeListener } = useContext(EventListenerContext);
 	useEffect(() => {
@@ -631,6 +688,10 @@ export const ScrollScreenshot: React.FC<{
 
 	const startCapture = useCallback(async () => {
 		enableScrollThroughRef.current = false;
+		originCapturedRef.current = false;
+		scrollCaptureQueueRef.current = [];
+		pendingScrollThroughRef.current = false;
+		pendingAutoScrollCaptureRef.current = false;
 		releaseImageUrlList();
 		setPositionRect(undefined);
 
@@ -658,6 +719,11 @@ export const ScrollScreenshot: React.FC<{
 		if (setPendingEnableAutoScrollThroughClickRef.current) {
 			clearTimeout(setPendingEnableAutoScrollThroughClickRef.current);
 		}
+		enableScrollThroughRef.current = false;
+		originCapturedRef.current = false;
+		scrollCaptureQueueRef.current = [];
+		pendingScrollThroughRef.current = false;
+		pendingAutoScrollCaptureRef.current = false;
 		listenMouseStop();
 	}, []);
 

@@ -12,7 +12,6 @@ import { ResetSettingsButton } from "@/components/resetSettingsButton";
 import {
 	PLUGIN_ID_AI_CHAT,
 	PLUGIN_ID_FFMPEG,
-	PLUGIN_ID_RAPID_OCR,
 	PLUGIN_ID_TRANSLATE,
 } from "@/constants/pluginService";
 import { AppSettingsActionContext } from "@/contexts/appSettingsActionContext";
@@ -222,13 +221,6 @@ export const HomePage = () => {
 												config.configKey === AppFunction.TopWindow
 											) {
 												return false;
-											}
-
-											if (
-												config.configKey === AppFunction.ScreenshotOcr ||
-												config.configKey === AppFunction.ScreenshotOcrTranslate
-											) {
-												return isReadyStatus?.(PLUGIN_ID_RAPID_OCR);
 											}
 
 											return true;

@@ -4,7 +4,6 @@ import {
 	BugOutlined,
 	CloudDownloadOutlined,
 	GithubOutlined,
-	HistoryOutlined,
 	ReloadOutlined,
 	RightOutlined,
 } from "@ant-design/icons";
@@ -17,28 +16,28 @@ import {
 	Button,
 	Descriptions,
 	Divider,
-	List,
 	Space,
 	Tag,
-	Tooltip,
 	Typography,
 	theme,
 } from "antd";
 import { compare } from "compare-versions";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIntl } from "react-intl";
-import { getCommitSha } from "@/commands/core";
 import { getLatestVersion } from "@/components/checkVersion";
 
 const { Title, Paragraph, Text } = Typography;
-const forkAuthorUrl = "https://github.com/xiaofeiTM233";
+const forkAuthorUrl = "https://github.com/Utility-Software-Collection";
 const originalRepositoryUrl = "https://github.com/mg-chao/snow-shot";
-const forkRepositoryUrl = "https://github.com/xiaofeiTM233/snow-shot";
-const githubIssuesUrl = "https://github.com/xiaofeiTM233/snow-shot/issues";
-const forkReleasesUrl = "https://github.com/xiaofeiTM233/snow-shot/releases";
+const forkRepositoryUrl =
+	"https://github.com/Utility-Software-Collection/snow-shot";
+const githubIssuesUrl =
+	"https://github.com/Utility-Software-Collection/snow-shot/issues";
+const forkReleasesUrl =
+	"https://github.com/Utility-Software-Collection/snow-shot/releases";
 const forkLatestReleaseUrl = `${forkReleasesUrl}/latest`;
 const forkLatestReleaseApiUrl =
-	"https://api.github.com/repos/xiaofeiTM233/snow-shot/releases/latest";
+	"https://api.github.com/repos/Utility-Software-Collection/snow-shot/releases/latest";
 
 type GithubRelease = {
 	html_url: string;
@@ -56,7 +55,6 @@ export const AboutPage = () => {
 	const intl = useIntl();
 	const [version, setVersion] = useState("0.1.3");
 	const [latestVersion, setLatestVersion] = useState<string>();
-	const [commitSha, setCommitSha] = useState<string>("");
 	const [forkLatestRelease, setForkLatestRelease] = useState<GithubRelease>();
 	const [releaseCheckLoading, setReleaseCheckLoading] = useState(false);
 	const [releaseCheckError, setReleaseCheckError] = useState(false);
@@ -75,9 +73,6 @@ export const AboutPage = () => {
 		if (latestVersion) {
 			setLatestVersion(latestVersion);
 		}
-
-		const commitSha = await getCommitSha();
-		setCommitSha(commitSha);
 	}, []);
 
 	useEffect(() => {
@@ -150,15 +145,6 @@ export const AboutPage = () => {
 		[intl],
 	);
 
-	const forkChangelogItems = useMemo(
-		() => [
-			intl.formatMessage({ id: "about.forkChangelog.item.redact" }),
-			intl.formatMessage({ id: "about.forkChangelog.item.toolbarPreview" }),
-			intl.formatMessage({ id: "about.forkChangelog.item.about" }),
-		],
-		[intl],
-	);
-
 	return (
 		<div
 			style={{
@@ -207,16 +193,14 @@ export const AboutPage = () => {
 					</Text>
 				</div>
 				<div style={{ marginTop: token.margin }}>
-					<Tooltip title={commitSha ? `Commit SHA: ${commitSha}` : undefined}>
-						<Tag color="blue">
-							<a
-								style={{ color: token.colorLink }}
-								onClick={() => openUrl("https://snowshot.top/")}
-							>
-								{intl.formatMessage({ id: "about.version" })} {version}
-							</a>
-						</Tag>
-					</Tooltip>
+					<Tag color="blue">
+						<a
+							style={{ color: token.colorLink }}
+							onClick={() => openUrl("https://snowshot.top/")}
+						>
+							{intl.formatMessage({ id: "about.version" })} {version}
+						</a>
+					</Tag>
 					<Tag color="green">
 						<a
 							style={{ color: token.colorLink }}
@@ -265,21 +249,6 @@ export const AboutPage = () => {
 								intl.formatMessage({
 									id: "about.branchInfo.latestVersion.empty",
 								}),
-						},
-						{
-							key: "commitSha",
-							label: intl.formatMessage({ id: "about.branchInfo.commitSha" }),
-							children: commitSha ? (
-								<a
-									onClick={() =>
-										openUrl(`${forkRepositoryUrl}/commit/${commitSha}`)
-									}
-								>
-									{commitSha.slice(0, 12)}
-								</a>
-							) : (
-								intl.formatMessage({ id: "about.branchInfo.unknown" })
-							),
 						},
 						{
 							key: "originalRepository",
@@ -388,23 +357,6 @@ export const AboutPage = () => {
 						}
 					/>
 				)}
-			</div>
-
-			<Divider />
-
-			{/* 第三方分支更新日志 */}
-			<div style={{ marginBottom: token.marginLG }}>
-				<Title level={3}>
-					<Space>
-						<HistoryOutlined />
-						{intl.formatMessage({ id: "about.forkChangelog.title" })}
-					</Space>
-				</Title>
-				<List
-					size="small"
-					dataSource={forkChangelogItems}
-					renderItem={(item) => <List.Item>{item}</List.Item>}
-				/>
 			</div>
 
 			<Divider />

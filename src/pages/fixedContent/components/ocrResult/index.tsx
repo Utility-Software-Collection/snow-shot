@@ -16,7 +16,6 @@ import { FormattedMessage, useIntl } from "react-intl";
 import { ocrDetect, ocrDetectWithSharedBuffer } from "@/commands/ocr";
 import { createWebViewSharedBufferChannel } from "@/commands/webview";
 import { CUSTOM_MODEL_PREFIX } from "@/constants/components/chat";
-import { PLUGIN_ID_RAPID_OCR } from "@/constants/pluginService";
 import { AntdContext } from "@/contexts/antdContext";
 import { AppContext } from "@/contexts/appContext";
 import { AppSettingsPublisher } from "@/contexts/appSettingsActionContext";
@@ -34,11 +33,16 @@ import {
 } from "@/pages/draw/extra";
 import { MarkdownContent } from "@/pages/tools/chat/page";
 import { appFetch } from "@/services/tools";
+import { externalOcrDetect } from "@/services/tools/ocr";
 import { AppSettingsGroup } from "@/types/appSettings";
 import type { OcrDetectResult } from "@/types/commands/ocr";
 import type { ElementRect } from "@/types/commands/screenshot";
 import { writeHtmlToClipboard, writeTextToClipboard } from "@/utils/clipboard";
 import { appError } from "@/utils/log";
+import {
+	getSelectedExternalOcrApiConfig,
+	isOcrServiceAvailable,
+} from "@/utils/ocr";
 import { getPlatformValue } from "@/utils/platform";
 import { randomString } from "@/utils/random";
 import { getWebViewSharedBuffer } from "@/utils/webview";
@@ -474,6 +478,29 @@ export const OcrResult: React.FC<{
 			scaleFactor: number,
 			detectAngle: boolean,
 		): Promise<OcrDetectResult | undefined> => {
+			const externalOcrApiConfig = getSelectedExternalOcrApiConfig(
+				getAppSettings()[AppSettingsGroup.FunctionOcr],
+			);
+			if (externalOcrApiConfig) {
+				const imageBlob = await new Promise<Blob | null>((resolve) => {
+					canvas.toBlob(resolve, "image/png", 1);
+				});
+
+				if (!imageBlob) {
+					return undefined;
+				}
+
+				return externalOcrDetect(
+					externalOcrApiConfig,
+					await imageBlob.arrayBuffer(),
+					{
+						width: canvas.width,
+						height: canvas.height,
+						scaleFactor,
+					},
+				);
+			}
+
 			const ocrResultWithSharedBuffer = await ocrDetectWithSharedBufferAction(
 				canvas,
 				scaleFactor,
@@ -499,7 +526,7 @@ export const OcrResult: React.FC<{
 			);
 			return ocrResult;
 		},
-		[ocrDetectWithSharedBufferAction],
+		[getAppSettings, ocrDetectWithSharedBufferAction],
 	);
 
 	/** 请求 ID，避免 OCR 检测中切换工具后仍然触发 OCR 结果 */
@@ -523,7 +550,12 @@ export const OcrResult: React.FC<{
 	] = useStateRef<AppOcrResult | undefined>(undefined);
 	const initDrawCanvas = useCallback(
 		async (params: OcrResultInitDrawCanvasParams) => {
-			if (!isReady?.(PLUGIN_ID_RAPID_OCR)) {
+			if (
+				!isOcrServiceAvailable(
+					getAppSettings()[AppSettingsGroup.FunctionOcr],
+					isReady,
+				)
+			) {
 				return;
 			}
 
@@ -659,7 +691,12 @@ export const OcrResult: React.FC<{
 
 	const initImage = useCallback(
 		async (params: OcrResultInitImageParams) => {
-			if (!isReady?.(PLUGIN_ID_RAPID_OCR)) {
+			if (
+				!isOcrServiceAvailable(
+					getAppSettings()[AppSettingsGroup.FunctionOcr],
+					isReady,
+				)
+			) {
 				return;
 			}
 
@@ -1331,6 +1368,29 @@ export const OcrResult: React.FC<{
 	useEffect(() => {
 		onCurrentOcrResultChange?.(currentOcrResult);
 	}, [currentOcrResult, onCurrentOcrResultChange]);
+	useEffect(() => {
+		const currentOcrResult = currentOcrResultRef.current;
+		if (
+			!currentOcrResult ||
+			(currentOcrResult.ocrResultType !== OcrResultType.Ocr &&
+				currentOcrResult.ocrResultType !== OcrResultType.Translated)
+		) {
+			return;
+		}
+
+		const functionOcrSettings =
+			getAppSettings()?.[AppSettingsGroup.FunctionOcr];
+		if (functionOcrSettings?.ocrResultFollowTheme === false) {
+			return;
+		}
+
+		updateOcrTextElements(
+			currentOcrResult.result,
+			currentOcrResult.ignoreScale,
+			currentOcrResult.ocrResultType,
+			{ ignoreResetValue: true },
+		);
+	}, [currentOcrResultRef, getAppSettings, updateOcrTextElements]);
 	useEffect(() => {
 		onVisionModelHtmlResultChange?.(visionModelHtmlResult);
 	}, [visionModelHtmlResult, onVisionModelHtmlResultChange]);

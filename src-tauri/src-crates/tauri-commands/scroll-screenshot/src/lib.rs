@@ -8,12 +8,20 @@ use snow_shot_global_state::WebViewSharedBufferState;
 use std::path::PathBuf;
 use tauri::ipc::Response;
 use tokio::sync::Mutex;
+use tokio::time::{Duration, sleep};
 
 use snow_shot_app_scroll_screenshot_service::scroll_screenshot_image_service::ScrollScreenshotImageService;
 use snow_shot_app_scroll_screenshot_service::scroll_screenshot_service::{
     ScrollDirection, ScrollImageList, ScrollScreenshotService,
 };
 use snow_shot_app_utils::{self, save_image_to_file};
+
+const FLUSH_IMAGE_IDLE_RETRY_COUNT: usize = 5;
+const FLUSH_IMAGE_IDLE_WAIT_MS: u64 = 80;
+const STABLE_CAPTURE_MAX_RETRY_COUNT: usize = 8;
+const STABLE_CAPTURE_WAIT_MS: u64 = 80;
+const STABLE_CAPTURE_AVG_DIFF_THRESHOLD: f32 = 1.5;
+const STABLE_CAPTURE_SAMPLE_STEP: usize = 16;
 
 pub async fn scroll_screenshot_init(
     scroll_screenshot_service: tauri::State<'_, Mutex<ScrollScreenshotService>>,
@@ -42,6 +50,107 @@ pub async fn scroll_screenshot_init(
     Ok(())
 }
 
+fn get_scroll_capture_region(
+    window: &tauri::Window,
+    min_x: i32,
+    min_y: i32,
+    max_x: i32,
+    max_y: i32,
+) -> ElementRect {
+    #[cfg(not(target_os = "macos"))]
+    let _ = window;
+
+    #[cfg(target_os = "macos")]
+    let rect_scale;
+    #[cfg(not(target_os = "macos"))]
+    let rect_scale = 1.0f64;
+
+    // macOS 下截图区域是基于逻辑像素
+    #[cfg(target_os = "macos")]
+    {
+        rect_scale = (1.0 / window.scale_factor().unwrap_or(1.0)) as f64;
+    }
+
+    let min_x = min_x as f64 * rect_scale;
+    let min_y = min_y as f64 * rect_scale;
+    let max_x = max_x as f64 * rect_scale;
+    let max_y = max_y as f64 * rect_scale;
+
+    ElementRect {
+        min_x: min_x.round() as i32,
+        min_y: min_y.round() as i32,
+        max_x: max_x.round() as i32,
+        max_y: max_y.round() as i32,
+    }
+}
+
+async fn capture_scroll_region(
+    window: &tauri::Window,
+    monitor_list: &snow_shot_app_utils::monitor_info::MonitorList,
+    crop_region: ElementRect,
+    capture_option: CaptureOption,
+) -> Result<image::DynamicImage, String> {
+    monitor_list
+        .capture_region(crop_region, Some(window), capture_option)
+        .await
+}
+
+fn get_capture_avg_diff(previous: &image::DynamicImage, current: &image::DynamicImage) -> f32 {
+    if previous.width() != current.width() || previous.height() != current.height() {
+        return f32::INFINITY;
+    }
+
+    let previous = previous.as_bytes();
+    let current = current.as_bytes();
+    let pixel_count = previous.len().min(current.len()) / 4;
+    if pixel_count == 0 {
+        return 0.0;
+    }
+
+    let mut total_diff = 0u64;
+    let mut sample_count = 0usize;
+
+    for pixel_index in (0..pixel_count).step_by(STABLE_CAPTURE_SAMPLE_STEP) {
+        let index = pixel_index * 4;
+        total_diff += previous[index].abs_diff(current[index]) as u64;
+        total_diff += previous[index + 1].abs_diff(current[index + 1]) as u64;
+        total_diff += previous[index + 2].abs_diff(current[index + 2]) as u64;
+        sample_count += 3;
+    }
+
+    if sample_count == 0 {
+        return 0.0;
+    }
+
+    total_diff as f32 / sample_count as f32
+}
+
+async fn wait_for_stable_capture(
+    window: &tauri::Window,
+    monitor_list: &snow_shot_app_utils::monitor_info::MonitorList,
+    crop_region: ElementRect,
+    capture_option: CaptureOption,
+) -> Result<image::DynamicImage, String> {
+    let mut previous_image =
+        capture_scroll_region(window, monitor_list, crop_region, capture_option).await?;
+
+    for _ in 0..STABLE_CAPTURE_MAX_RETRY_COUNT {
+        sleep(Duration::from_millis(STABLE_CAPTURE_WAIT_MS)).await;
+
+        let current_image =
+            capture_scroll_region(window, monitor_list, crop_region, capture_option).await?;
+        if get_capture_avg_diff(&previous_image, &current_image)
+            <= STABLE_CAPTURE_AVG_DIFF_THRESHOLD
+        {
+            return Ok(current_image);
+        }
+
+        previous_image = current_image;
+    }
+
+    Ok(previous_image)
+}
+
 pub async fn scroll_screenshot_capture(
     window: tauri::Window,
     scroll_screenshot_image_service: tauri::State<'_, Mutex<ScrollScreenshotImageService>>,
@@ -54,51 +163,24 @@ pub async fn scroll_screenshot_capture(
     correct_hdr_color_algorithm: CorrectHdrColorAlgorithm,
     correct_color_filter: bool,
 ) -> Result<(), String> {
-    // 区域截图
-    let image = {
-        #[cfg(target_os = "macos")]
-        let rect_scale;
-        #[cfg(not(target_os = "macos"))]
-        let rect_scale = 1.0f64;
-
-        // macOS 下截图区域是基于逻辑像素
-        #[cfg(target_os = "macos")]
-        {
-            rect_scale = (1.0 / window.scale_factor().unwrap_or(1.0)) as f64;
-        }
-
-        let min_x = min_x as f64 * rect_scale;
-        let min_y = min_y as f64 * rect_scale;
-        let max_x = max_x as f64 * rect_scale;
-        let max_y = max_y as f64 * rect_scale;
-
-        let crop_region = ElementRect {
-            min_x: min_x.round() as i32,
-            min_y: min_y.round() as i32,
-            max_x: max_x.round() as i32,
-            max_y: max_y.round() as i32,
-        };
-        let monitor_list = {
-            let mut monitor_list_service = scroll_screenshot_capture_service.lock().await;
-            monitor_list_service.init(
-                crop_region,
-                correct_hdr_color_algorithm == CorrectHdrColorAlgorithm::None,
-            );
-            monitor_list_service.get()
-        };
-
-        monitor_list
-            .capture_region(
-                crop_region,
-                Some(&window),
-                CaptureOption {
-                    color_format: ColorFormat::Rgba8,
-                    correct_hdr_color_algorithm,
-                    correct_color_filter,
-                },
-            )
-            .await?
+    let crop_region = get_scroll_capture_region(&window, min_x, min_y, max_x, max_y);
+    let monitor_list = {
+        let mut monitor_list_service = scroll_screenshot_capture_service.lock().await;
+        monitor_list_service.init(
+            crop_region,
+            correct_hdr_color_algorithm == CorrectHdrColorAlgorithm::None,
+        );
+        monitor_list_service.get()
     };
+
+    let capture_option = CaptureOption {
+        color_format: ColorFormat::Rgba8,
+        correct_hdr_color_algorithm,
+        correct_color_filter,
+    };
+
+    let image =
+        wait_for_stable_capture(&window, &monitor_list, crop_region, capture_option).await?;
 
     scroll_screenshot_image_service
         .lock()
@@ -152,7 +234,14 @@ pub async fn scroll_screenshot_handle_image(
 
     let crop_image = match handle_result {
         (edge_position, None) => {
-            return Ok(Response::new(edge_position.to_le_bytes().to_vec()));
+            let mut buf = Vec::with_capacity(20);
+            buf.extend_from_slice(&edge_position.to_le_bytes());
+            buf.extend_from_slice(&0i32.to_le_bytes());
+            buf.extend_from_slice(&scroll_screenshot_service.top_image_size.to_le_bytes());
+            buf.extend_from_slice(&scroll_screenshot_service.bottom_image_size.to_le_bytes());
+            buf.extend_from_slice(&(result_scroll_image_list as i32).to_le_bytes());
+
+            return Ok(Response::new(buf));
         }
         (_, Some(ScrollImageList::Top)) => scroll_screenshot_service.top_image_list.last().unwrap(),
         (_, Some(ScrollImageList::Bottom)) => {
@@ -211,11 +300,47 @@ pub async fn scroll_screenshot_get_size(
     })
 }
 
+async fn flush_scroll_screenshot_images(
+    scroll_screenshot_service: &mut ScrollScreenshotService,
+    scroll_screenshot_image_service: tauri::State<'_, Mutex<ScrollScreenshotImageService>>,
+) {
+    let mut idle_count = 0;
+
+    loop {
+        let scroll_image = {
+            let mut scroll_screenshot_image_service = scroll_screenshot_image_service.lock().await;
+            scroll_screenshot_image_service.pop_image()
+        };
+
+        match scroll_image {
+            Some(scroll_image) => {
+                idle_count = 0;
+                scroll_screenshot_service.handle_image(scroll_image.image, scroll_image.direction);
+            }
+            None => {
+                if idle_count >= FLUSH_IMAGE_IDLE_RETRY_COUNT {
+                    break;
+                }
+
+                idle_count += 1;
+                sleep(Duration::from_millis(FLUSH_IMAGE_IDLE_WAIT_MS)).await;
+            }
+        }
+    }
+}
+
 pub async fn scroll_screenshot_save_to_file(
     scroll_screenshot_service: tauri::State<'_, Mutex<ScrollScreenshotService>>,
+    scroll_screenshot_image_service: tauri::State<'_, Mutex<ScrollScreenshotImageService>>,
     file_path: String,
 ) -> Result<(), String> {
     let mut scroll_screenshot_service = scroll_screenshot_service.lock().await;
+
+    flush_scroll_screenshot_images(
+        &mut scroll_screenshot_service,
+        scroll_screenshot_image_service,
+    )
+    .await;
 
     let image = scroll_screenshot_service.export();
     let image = match image {
@@ -235,11 +360,18 @@ pub async fn scroll_screenshot_save_to_file(
 pub async fn scroll_screenshot_save_to_clipboard<F>(
     write_image_to_clipboard: F,
     scroll_screenshot_service: tauri::State<'_, Mutex<ScrollScreenshotService>>,
+    scroll_screenshot_image_service: tauri::State<'_, Mutex<ScrollScreenshotImageService>>,
 ) -> Result<(), String>
 where
     F: Fn(&image::DynamicImage) -> Result<(), String>,
 {
     let mut scroll_screenshot_service = scroll_screenshot_service.lock().await;
+
+    flush_scroll_screenshot_images(
+        &mut scroll_screenshot_service,
+        scroll_screenshot_image_service,
+    )
+    .await;
 
     let image = scroll_screenshot_service.export();
     match image {
@@ -277,6 +409,7 @@ pub async fn scroll_screenshot_clear(
 
 pub async fn scroll_screenshot_get_image_data(
     scroll_screenshot_service: tauri::State<'_, Mutex<ScrollScreenshotService>>,
+    scroll_screenshot_image_service: tauri::State<'_, Mutex<ScrollScreenshotImageService>>,
     #[allow(unused_variables)] webview_shared_buffer_state: tauri::State<
         '_,
         WebViewSharedBufferState,
@@ -285,6 +418,12 @@ pub async fn scroll_screenshot_get_image_data(
     force_to_png: bool,
 ) -> Result<Response, String> {
     let mut scroll_screenshot_service = scroll_screenshot_service.lock().await;
+
+    flush_scroll_screenshot_images(
+        &mut scroll_screenshot_service,
+        scroll_screenshot_image_service,
+    )
+    .await;
 
     let image = scroll_screenshot_service.export();
     let image_data = match image {

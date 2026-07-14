@@ -240,6 +240,10 @@ export const settings = {
 	"settings.functionSettings.screenshotSettings.saveToCloud": "儲存到雲端按鈕",
 	"settings.functionSettings.screenshotSettings.saveToCloud.tip":
 		"工具列新增「儲存到雲端」按鈕，點擊後自動儲存到雲端並複製結果到剪貼簿",
+	"settings.functionSettings.screenshotSettings.autoSaveToCloud":
+		"截圖後自動上傳到雲端",
+	"settings.functionSettings.screenshotSettings.autoSaveToCloud.tip":
+		"複製或儲存截圖後自動上傳到雲端，不會覆蓋目前剪貼簿內容",
 	"settings.functionSettings.screenshotSettings.cloudSaveUrl.type":
 		"雲端儲存協定",
 	"settings.functionSettings.screenshotSettings.cloudProxyUrl":
@@ -247,6 +251,8 @@ export const settings = {
 	"settings.functionSettings.screenshotSettings.cloudProxyUrl.tip":
 		"填寫後，將使用該位址取代實際雲端資源連結中的位址",
 	"settings.functionSettings.screenshotSettings.cloudSaveUrl.type.s3": "S3",
+	"settings.functionSettings.screenshotSettings.cloudSaveUrl.type.webdav":
+		"WebDAV",
 	"settings.functionSettings.screenshotSettings.cloudSaveUrl.s3AccessKeyId":
 		"Access key ID",
 	"settings.functionSettings.screenshotSettings.cloudSaveUrl.s3SecretAccessKey":
@@ -261,6 +267,14 @@ export const settings = {
 		"Path prefix",
 	"settings.functionSettings.screenshotSettings.cloudSaveUrl.s3ForcePathStyle":
 		"Force path style",
+	"settings.functionSettings.screenshotSettings.cloudSaveUrl.webdavUrl":
+		"WebDAV 位址",
+	"settings.functionSettings.screenshotSettings.cloudSaveUrl.webdavUsername":
+		"WebDAV 使用者名稱",
+	"settings.functionSettings.screenshotSettings.cloudSaveUrl.webdavPassword":
+		"WebDAV 密碼",
+	"settings.functionSettings.screenshotSettings.cloudSaveUrl.webdavPathPrefix":
+		"WebDAV 路徑前綴",
 	"settings.functionSettings.screenshotSettings.autoSaveFileMode":
 		"儲存檔案增強",
 	"settings.functionSettings.screenshotSettings.autoSaveFileMode.saveMode":
@@ -564,6 +578,10 @@ export const settings = {
 		"截圖歷史儲存編輯結果",
 	"settings.systemSettings.screenshotSettings.historySaveEditResult.tip":
 		"開啟後將儲存截圖編輯的最終結果到截圖歷史中，但將佔用更多的儲存空間",
+	"settings.systemSettings.screenshotSettings.exportCaptureHistoryAsZip":
+		"截圖歷史匯出為壓縮檔",
+	"settings.systemSettings.screenshotSettings.exportCaptureHistoryAsZip.tip":
+		"開啟後，截圖歷史的「全部匯出」將儲存為 ZIP 檔；關閉後將匯出到資料夾",
 	"settings.systemSettings.screenshotSettings.enableBrowserClipboard":
 		"使用瀏覽器剪貼簿",
 	"settings.systemSettings.screenshotSettings.tryWriteBitmapImageToClipboard":
@@ -623,6 +641,11 @@ export const settings = {
 	"settings.systemSettings.coreSettings.hotLoadPageCount": "熱載入頁面數量",
 	"settings.systemSettings.coreSettings.hotLoadPageCount.tip":
 		"透過熱載入頁面，實現貼圖、錄影、全螢幕畫布等功能的快速載入，但同時提高了記憶體的佔用",
+	"settings.systemSettings.coreSettings.renderEngine": "渲染引擎",
+	"settings.systemSettings.coreSettings.renderEngine.tip":
+		"控制圖片層使用的 Pixi 渲染後端。WebGL 相容性更好；WebGPU 效能潛力更高，不支援時會自動回退",
+	"settings.systemSettings.coreSettings.renderEngine.webgl": "WebGL",
+	"settings.systemSettings.coreSettings.renderEngine.webgpu": "WebGPU",
 	"settings.systemSettings.branchFunctionSettings": "分支功能開關/實驗功能",
 	"settings.systemSettings.branchFunctionSettings.disableWebViewSharedBuffer":
 		"停用 WebView SharedBuffer",
@@ -632,15 +655,38 @@ export const settings = {
 	"settings.functionSettings.ocrSettings.htmlVisionModel": "視覺理解模型",
 	"settings.functionSettings.ocrSettings.htmlVisionModel.tip":
 		"將圖片轉為 HTML 的視覺理解模型",
-	"settings.functionSettings.ocrSettings.customOcrModelConfig": "文字辨識模型配置",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig":
+		"文字辨識模型配置",
 	"settings.functionSettings.ocrSettings.customOcrModelConfig.tip":
 		"從 {link} 下載 ONNX 模型檔案放置到外掛程式資料目錄後，可在此配置文字辨識模型",
-	"settings.functionSettings.ocrSettings.customOcrModelConfig.tip.link": "此倉庫",
-	"settings.functionSettings.ocrSettings.customOcrModelConfig.add": "新增文字辨識模型配置",
-	"settings.functionSettings.ocrSettings.customOcrModelConfig.modelName": "模型名稱",
-	"settings.functionSettings.ocrSettings.customOcrModelConfig.detModel": "檢測(det)",
-	"settings.functionSettings.ocrSettings.customOcrModelConfig.recModel": "識別(rec)",
-	"settings.functionSettings.ocrSettings.customOcrModelConfig.clsModel": "方向(cls)",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.tip.link":
+		"此倉庫",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.add":
+		"新增文字辨識模型配置",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.modelName":
+		"模型名稱",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.detModel":
+		"檢測(det)",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.recModel":
+		"識別(rec)",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.clsModel":
+		"方向(cls)",
+	"settings.functionSettings.ocrSettings.externalOcrApiConfig":
+		"外部 OCR API 配置",
+	"settings.functionSettings.ocrSettings.externalOcrApiConfig.tip":
+		"用於接入 manga-ocr 等外部服務。Snow Shot 將 POST JSON：image/image_base64/data_url，回應可返回純文字、text 欄位或 Snow Shot 的 text_blocks 結構",
+	"settings.functionSettings.ocrSettings.externalOcrApiConfig.add":
+		"新增外部 OCR API",
+	"settings.functionSettings.ocrSettings.externalOcrApiConfig.modelName":
+		"模型名稱",
+	"settings.functionSettings.ocrSettings.externalOcrApiConfig.apiUri":
+		"API 位址",
+	"settings.functionSettings.ocrSettings.externalOcrApiConfig.apiKey":
+		"API Key",
+	"settings.functionSettings.ocrSettings.ocrResultFollowTheme":
+		"OCR 嵌字跟隨主題",
+	"settings.functionSettings.ocrSettings.ocrResultFollowTheme.tip":
+		"開啟後，切換軟體深色/淺色模式時會重新渲染文字辨識嵌字顏色和背景",
 	"settings.functionSettings.ocrSettings.htmlVisionModel.default": "預設",
 	"settings.functionSettings.ocrSettings.htmlVisionModel.default.tip":
 		"預設使用首個支援視覺理解的模型",

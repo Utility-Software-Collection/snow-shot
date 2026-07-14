@@ -252,6 +252,10 @@ export const settings = {
 		"Save to Cloud Button",
 	"settings.functionSettings.screenshotSettings.saveToCloud.tip":
 		"Add 'Save to Cloud' button to toolbar, automatically saves to cloud and copies result to clipboard",
+	"settings.functionSettings.screenshotSettings.autoSaveToCloud":
+		"Auto Upload to Cloud after Screenshot",
+	"settings.functionSettings.screenshotSettings.autoSaveToCloud.tip":
+		"Automatically uploads after copying or saving a screenshot without overwriting the current clipboard",
 	"settings.functionSettings.screenshotSettings.cloudSaveUrl.type":
 		"Cloud Save Protocol",
 	"settings.functionSettings.screenshotSettings.cloudProxyUrl":
@@ -259,6 +263,8 @@ export const settings = {
 	"settings.functionSettings.screenshotSettings.cloudProxyUrl.tip":
 		"When filled, will replace actual cloud resource links with this address",
 	"settings.functionSettings.screenshotSettings.cloudSaveUrl.type.s3": "S3",
+	"settings.functionSettings.screenshotSettings.cloudSaveUrl.type.webdav":
+		"WebDAV",
 	"settings.functionSettings.screenshotSettings.cloudSaveUrl.s3AccessKeyId":
 		"Access key ID",
 	"settings.functionSettings.screenshotSettings.cloudSaveUrl.s3SecretAccessKey":
@@ -273,6 +279,14 @@ export const settings = {
 		"Path prefix",
 	"settings.functionSettings.screenshotSettings.cloudSaveUrl.s3ForcePathStyle":
 		"Force path style",
+	"settings.functionSettings.screenshotSettings.cloudSaveUrl.webdavUrl":
+		"WebDAV URL",
+	"settings.functionSettings.screenshotSettings.cloudSaveUrl.webdavUsername":
+		"WebDAV username",
+	"settings.functionSettings.screenshotSettings.cloudSaveUrl.webdavPassword":
+		"WebDAV password",
+	"settings.functionSettings.screenshotSettings.cloudSaveUrl.webdavPathPrefix":
+		"WebDAV path prefix",
 	"settings.functionSettings.screenshotSettings.autoSaveFileMode":
 		"Save File Enhancement",
 	"settings.functionSettings.screenshotSettings.autoSaveFileMode.saveMode":
@@ -592,6 +606,10 @@ export const settings = {
 		"Save Edit Result to History",
 	"settings.systemSettings.screenshotSettings.historySaveEditResult.tip":
 		"Save final edited result to screenshot history when enabled, but will occupy more storage space",
+	"settings.systemSettings.screenshotSettings.exportCaptureHistoryAsZip":
+		"Export Screenshot History as ZIP",
+	"settings.systemSettings.screenshotSettings.exportCaptureHistoryAsZip.tip":
+		"When enabled, Export All in screenshot history saves a ZIP file; when disabled, it exports to a folder",
 	"settings.systemSettings.screenshotSettings.enableBrowserClipboard":
 		"Use Browser Clipboard",
 	"settings.systemSettings.screenshotSettings.tryWriteBitmapImageToClipboard":
@@ -656,6 +674,11 @@ export const settings = {
 		"Hot Load Page Count",
 	"settings.systemSettings.coreSettings.hotLoadPageCount.tip":
 		"Hot load pages for fast loading of pinned clipboard content to screen, video recording, fullscreen canvas, etc., but also increases memory usage",
+	"settings.systemSettings.coreSettings.renderEngine": "Render Engine",
+	"settings.systemSettings.coreSettings.renderEngine.tip":
+		"Controls the Pixi render backend for image layers. WebGL is more compatible; WebGPU has higher performance potential and falls back automatically when unsupported",
+	"settings.systemSettings.coreSettings.renderEngine.webgl": "WebGL",
+	"settings.systemSettings.coreSettings.renderEngine.webgpu": "WebGPU",
 	"settings.systemSettings.branchFunctionSettings":
 		"Branch Switches / Experimental",
 	"settings.systemSettings.branchFunctionSettings.disableWebViewSharedBuffer":
@@ -666,15 +689,38 @@ export const settings = {
 	"settings.functionSettings.ocrSettings.htmlVisionModel": "Vision Model",
 	"settings.functionSettings.ocrSettings.htmlVisionModel.tip":
 		"Vision model for converting images to HTML",
-	"settings.functionSettings.ocrSettings.customOcrModelConfig": "OCR Model Configuration",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig":
+		"OCR Model Configuration",
 	"settings.functionSettings.ocrSettings.customOcrModelConfig.tip":
 		"Download ONNX model files from {link} and place them in the plugin data directory, then configure OCR models here",
-	"settings.functionSettings.ocrSettings.customOcrModelConfig.tip.link": "this repository",
-	"settings.functionSettings.ocrSettings.customOcrModelConfig.add": "Add OCR Model Config",
-	"settings.functionSettings.ocrSettings.customOcrModelConfig.modelName": "Model Name",
-	"settings.functionSettings.ocrSettings.customOcrModelConfig.detModel": "Detection(det)",
-	"settings.functionSettings.ocrSettings.customOcrModelConfig.recModel": "Recognition(rec)",
-	"settings.functionSettings.ocrSettings.customOcrModelConfig.clsModel": "Orientation(cls)",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.tip.link":
+		"this repository",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.add":
+		"Add OCR Model Config",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.modelName":
+		"Model Name",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.detModel":
+		"Detection(det)",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.recModel":
+		"Recognition(rec)",
+	"settings.functionSettings.ocrSettings.customOcrModelConfig.clsModel":
+		"Orientation(cls)",
+	"settings.functionSettings.ocrSettings.externalOcrApiConfig":
+		"External OCR API Config",
+	"settings.functionSettings.ocrSettings.externalOcrApiConfig.tip":
+		"Use this for external services such as manga-ocr. Snow Shot POSTs JSON with image/image_base64/data_url; responses may return plain text, a text field, or Snow Shot text_blocks",
+	"settings.functionSettings.ocrSettings.externalOcrApiConfig.add":
+		"Add External OCR API",
+	"settings.functionSettings.ocrSettings.externalOcrApiConfig.modelName":
+		"Model Name",
+	"settings.functionSettings.ocrSettings.externalOcrApiConfig.apiUri":
+		"API URI",
+	"settings.functionSettings.ocrSettings.externalOcrApiConfig.apiKey":
+		"API Key",
+	"settings.functionSettings.ocrSettings.ocrResultFollowTheme":
+		"OCR Overlay Follows Theme",
+	"settings.functionSettings.ocrSettings.ocrResultFollowTheme.tip":
+		"When enabled, OCR overlay text and background are re-rendered after switching between light and dark mode",
 	"settings.functionSettings.ocrSettings.htmlVisionModel.default": "Default",
 	"settings.functionSettings.ocrSettings.htmlVisionModel.default.tip":
 		"Use the first vision model by default",

@@ -38,3 +38,25 @@ export const uploadToS3 = async (
 	});
 	return result;
 };
+
+export const uploadToWebDAV = async (
+	url: string,
+	username: string,
+	password: string,
+	path_prefix: string | undefined,
+	data: Uint8Array | ArrayBuffer,
+	filename: string,
+	content_type: string | undefined,
+) => {
+	const result = await invoke<string>("upload_to_webdav", data, {
+		headers: {
+			"x-url": Base64.encode(url),
+			"x-username": Base64.encode(username),
+			"x-password": Base64.encode(password),
+			"x-path-prefix": Base64.encode(path_prefix ?? ""),
+			"x-content-type": Base64.encode(content_type ?? ""),
+			"x-filename": Base64.encode(filename),
+		},
+	});
+	return result;
+};

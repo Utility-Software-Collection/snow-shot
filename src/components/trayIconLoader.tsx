@@ -17,7 +17,6 @@ import {
 import {
 	PLUGIN_ID_AI_CHAT,
 	PLUGIN_ID_FFMPEG,
-	PLUGIN_ID_RAPID_OCR,
 	PLUGIN_ID_TRANSLATE,
 } from "@/constants/pluginService";
 import { AntdContext } from "@/contexts/antdContext";
@@ -54,6 +53,7 @@ import {
 } from "@/types/components/appFunction";
 import { formatKey } from "@/utils/format";
 import { appError } from "@/utils/log";
+import { isOcrServiceAvailable } from "@/utils/ocr";
 import { getPlatformValue } from "@/utils/platform";
 import { ScreenshotType } from "@/utils/types";
 import { showWindow } from "@/utils/window";
@@ -236,7 +236,10 @@ const TrayIconLoaderComponent = () => {
 						executeScreenshot(ScreenshotType.Fixed);
 					},
 				},
-				...(isReadyStatus(PLUGIN_ID_RAPID_OCR)
+				...(isOcrServiceAvailable(
+					getAppSettings()[AppSettingsGroup.FunctionOcr],
+					isReadyStatus,
+				)
 					? [
 							{
 								id: `${appWindow.label}-screenshot-ocr`,
@@ -536,27 +539,27 @@ const TrayIconLoaderComponent = () => {
 									.iconClickAction === TrayIconClickAction.Screenshot
 							) {
 								executeScreenshot();
-						} else if (
-							getAppSettings()[AppSettingsGroup.FunctionTrayIcon]
-								.iconClickAction === TrayIconClickAction.ShowMainWindow
-						) {
-							showWindow();
-						} else if (
-							getAppSettings()[AppSettingsGroup.FunctionTrayIcon]
-								.iconClickAction === TrayIconClickAction.Translate
-						) {
-							executeTranslate();
-						} else if (
-							getAppSettings()[AppSettingsGroup.FunctionTrayIcon]
-								.iconClickAction === TrayIconClickAction.AiChat
-						) {
-							executeChat();
-						} else if (
-							getAppSettings()[AppSettingsGroup.FunctionTrayIcon]
-								.iconClickAction === TrayIconClickAction.CaptureHistory
-						) {
-							openCaptureHistory();
-						}
+							} else if (
+								getAppSettings()[AppSettingsGroup.FunctionTrayIcon]
+									.iconClickAction === TrayIconClickAction.ShowMainWindow
+							) {
+								showWindow();
+							} else if (
+								getAppSettings()[AppSettingsGroup.FunctionTrayIcon]
+									.iconClickAction === TrayIconClickAction.Translate
+							) {
+								executeTranslate();
+							} else if (
+								getAppSettings()[AppSettingsGroup.FunctionTrayIcon]
+									.iconClickAction === TrayIconClickAction.AiChat
+							) {
+								executeChat();
+							} else if (
+								getAppSettings()[AppSettingsGroup.FunctionTrayIcon]
+									.iconClickAction === TrayIconClickAction.CaptureHistory
+							) {
+								openCaptureHistory();
+							}
 						}
 						break;
 				}

@@ -8,7 +8,7 @@ import {
 	writeBitmapImageToClipboardWithSharedBuffer,
 	writeImagePixelsToClipboardWithSharedBuffer,
 } from "@/commands/core";
-import { uploadToS3 } from "@/commands/httpServices";
+import { uploadToS3, uploadToWebDAV } from "@/commands/httpServices";
 import { createWebViewSharedBufferChannel } from "@/commands/webview";
 import type { ImageLayerActionType } from "@/components/imageLayer";
 import { INIT_CONTAINER_KEY } from "@/components/imageLayer/actions";
@@ -16,6 +16,7 @@ import {
 	type AppSettingsData,
 	AppSettingsGroup,
 	CloudSaveUrlFormat,
+	CloudSaveUrlType,
 } from "@/types/appSettings";
 import { ImageFormat, type ImagePath } from "@/types/utils/file";
 import { writeImageToClipboard } from "@/utils/clipboard";
@@ -35,6 +36,9 @@ import type {
 } from "./components/selectLayer";
 import type { CaptureBoundingBoxInfo } from "./extra";
 import { CaptureStep } from "./types";
+
+const getCloudObjectKey = (pathPrefix: string | undefined, fileName: string) =>
+	`${pathPrefix ?? ""}${fileName}`;
 
 const getCanvasCore = async (
 	selectRectParams: SelectRectParams | undefined,
@@ -584,23 +588,40 @@ export const saveCanvasToCloud = async (
 		const fileName = `${generateImageFileName(
 			appSettings[AppSettingsGroup.FunctionOutput].uploadToCloudSaveUrlFormat,
 		)}.png`;
-		let result = await uploadToS3(
-			appSettings[AppSettingsGroup.FunctionScreenshot].s3Endpoint,
-			appSettings[AppSettingsGroup.FunctionScreenshot].s3Region,
-			appSettings[AppSettingsGroup.FunctionScreenshot].s3AccessKeyId,
-			appSettings[AppSettingsGroup.FunctionScreenshot].s3SecretAccessKey,
-			appSettings[AppSettingsGroup.FunctionScreenshot].s3BucketName,
-			appSettings[AppSettingsGroup.FunctionScreenshot].s3PathPrefix,
-			appSettings[AppSettingsGroup.FunctionScreenshot].s3ForcePathStyle,
-			imageBuffer,
-			fileName,
-			"image/png",
-		);
+		const screenshotSettings = appSettings[AppSettingsGroup.FunctionScreenshot];
+		const cloudPathPrefix =
+			screenshotSettings.cloudSaveUrlType === CloudSaveUrlType.WebDAV
+				? screenshotSettings.webdavPathPrefix
+				: screenshotSettings.s3PathPrefix;
+		const cloudObjectKey = getCloudObjectKey(cloudPathPrefix, fileName);
+		let result =
+			screenshotSettings.cloudSaveUrlType === CloudSaveUrlType.WebDAV
+				? await uploadToWebDAV(
+						screenshotSettings.webdavUrl,
+						screenshotSettings.webdavUsername,
+						screenshotSettings.webdavPassword,
+						screenshotSettings.webdavPathPrefix,
+						imageBuffer,
+						fileName,
+						"image/png",
+					)
+				: await uploadToS3(
+						screenshotSettings.s3Endpoint,
+						screenshotSettings.s3Region,
+						screenshotSettings.s3AccessKeyId,
+						screenshotSettings.s3SecretAccessKey,
+						screenshotSettings.s3BucketName,
+						screenshotSettings.s3PathPrefix,
+						screenshotSettings.s3ForcePathStyle,
+						imageBuffer,
+						fileName,
+						"image/png",
+					);
 
 		const cloudProxyUrl =
 			appSettings[AppSettingsGroup.FunctionScreenshot].cloudProxyUrl;
 		if (cloudProxyUrl) {
-			const resultUrl = urlJoin(cloudProxyUrl, fileName);
+			const resultUrl = urlJoin(cloudProxyUrl, cloudObjectKey);
 			result = resultUrl.toString();
 		}
 

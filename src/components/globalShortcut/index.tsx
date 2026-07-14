@@ -47,7 +47,6 @@ import { defaultAppFunctionConfigs } from "@/constants/appFunction";
 import {
 	PLUGIN_ID_AI_CHAT,
 	PLUGIN_ID_FFMPEG,
-	PLUGIN_ID_RAPID_OCR,
 	PLUGIN_ID_TRANSLATE,
 } from "@/constants/pluginService";
 import { AppSettingsPublisher } from "@/contexts/appSettingsActionContext";
@@ -81,6 +80,7 @@ import {
 	type AppFunctionGroup,
 } from "@/types/components/appFunction";
 import { appError } from "@/utils/log";
+import { isOcrServiceAvailable } from "@/utils/ocr";
 import { ScreenshotType } from "@/utils/types";
 import { ChangeDelaySeconds } from "./components/changeDelaySeconds";
 
@@ -131,6 +131,10 @@ const GlobalShortcutCore = ({ children }: { children: React.ReactNode }) => {
 		configs: Record<AppFunction, AppFunctionComponentConfig>;
 		groupConfigs: Record<AppFunctionGroup, AppFunctionComponentConfig[]>;
 	} = useMemo(() => {
+		const ocrServiceReady = isOcrServiceAvailable(
+			getAppSettings()[AppSettingsGroup.FunctionOcr],
+			isReadyStatus,
+		);
 		const configs = Object.keys(defaultAppFunctionConfigs)
 			.filter((key) => {
 				if (
@@ -141,7 +145,7 @@ const GlobalShortcutCore = ({ children }: { children: React.ReactNode }) => {
 				}
 
 				if (key === AppFunction.ScreenshotOcr) {
-					return isReadyStatus?.(PLUGIN_ID_RAPID_OCR);
+					return ocrServiceReady;
 				}
 
 				if (key === AppFunction.Chat) {
@@ -153,10 +157,7 @@ const GlobalShortcutCore = ({ children }: { children: React.ReactNode }) => {
 				}
 
 				if (key === AppFunction.ScreenshotOcrTranslate) {
-					return (
-						isReadyStatus?.(PLUGIN_ID_RAPID_OCR) &&
-						isReadyStatus?.(PLUGIN_ID_TRANSLATE)
-					);
+					return ocrServiceReady && isReadyStatus?.(PLUGIN_ID_TRANSLATE);
 				}
 
 				return true;

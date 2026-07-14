@@ -39,10 +39,7 @@ import {
 	SerialNumberIcon,
 	TextIcon,
 } from "@/components/icons";
-import {
-	PLUGIN_ID_RAPID_OCR,
-	PLUGIN_ID_TRANSLATE,
-} from "@/constants/pluginService";
+import { PLUGIN_ID_TRANSLATE } from "@/constants/pluginService";
 import { AntdContext } from "@/contexts/antdContext";
 import {
 	AppSettingsActionContext,
@@ -61,6 +58,7 @@ import { DrawToolbarKeyEventKey } from "@/types/components/drawToolbar";
 import { DrawState } from "@/types/draw";
 import { getExcalidrawCanvas } from "@/utils/excalidraw";
 import { appWarn } from "@/utils/log";
+import { isOcrServiceAvailable } from "@/utils/ocr";
 import { ScreenshotType } from "@/utils/types";
 import { zIndexs } from "@/utils/zIndex";
 import {
@@ -167,6 +165,9 @@ const DrawToolbarCore: React.FC<DrawToolbarProps> = ({
 	const [customToolbarToolHiddenMap, setCustomToolbarToolHiddenMap] = useState<
 		Partial<Record<DrawState, boolean>> | undefined
 	>(undefined);
+	const [functionOcrSettings, setFunctionOcrSettings] = useState<
+		AppSettingsData[AppSettingsGroup.FunctionOcr] | undefined
+	>(undefined);
 	const drawToolarContainerRef = useRef<HTMLDivElement | null>(null);
 	const drawToolbarOpacityWrapRef = useRef<HTMLDivElement | null>(null);
 	const scrollScreenshotToolActionRef = useRef<
@@ -219,6 +220,7 @@ const DrawToolbarCore: React.FC<DrawToolbarProps> = ({
 				setEnableLockDrawTool(
 					settings[AppSettingsGroup.Cache].enableLockDrawTool,
 				);
+				setFunctionOcrSettings(settings[AppSettingsGroup.FunctionOcr]);
 
 				const toolHiddenMap: Partial<Record<DrawState, boolean>> = {};
 				for (const drawState of CanHiddenToolSet.values()) {
@@ -262,7 +264,14 @@ const DrawToolbarCore: React.FC<DrawToolbarProps> = ({
 		[onDraggingChange],
 	);
 
-	const { isReadyStatus, isReady } = usePluginServiceContext();
+	const { isReadyStatus } = usePluginServiceContext();
+	const ocrServiceReady = useMemo(
+		() =>
+			functionOcrSettings
+				? isOcrServiceAvailable(functionOcrSettings, isReadyStatus)
+				: false,
+		[functionOcrSettings, isReadyStatus],
+	);
 	const onToolClick = useCallback(
 		(drawState: DrawState) => {
 			const prev = getDrawState();
@@ -501,7 +510,7 @@ const DrawToolbarCore: React.FC<DrawToolbarProps> = ({
 					break;
 				case DrawState.OcrDetect:
 				case DrawState.OcrTranslate:
-					if (isReady?.(PLUGIN_ID_RAPID_OCR)) {
+					if (ocrServiceReady) {
 						onOcrDetect();
 					}
 					break;
@@ -526,9 +535,9 @@ const DrawToolbarCore: React.FC<DrawToolbarProps> = ({
 			enableLockDrawToolRef,
 			getDrawState,
 			intl,
-			isReady,
 			message,
 			onOcrDetect,
+			ocrServiceReady,
 			selectLayerActionRef,
 			setCaptureStep,
 			setDrawState,
@@ -958,15 +967,12 @@ const DrawToolbarCore: React.FC<DrawToolbarProps> = ({
 							<ToolButton
 								hidden={
 									customToolbarToolHiddenMap?.[DrawState.OcrDetect] ||
-									!isReadyStatus?.(PLUGIN_ID_RAPID_OCR)
+									!ocrServiceReady
 								}
 								componentKey={DrawToolbarKeyEventKey.OcrDetectTool}
 								icon={<OcrDetectIcon style={{ fontSize: "0.88em" }} />}
 								drawState={DrawState.OcrDetect}
-								disable={
-									disableNormalScreenshotTool ||
-									!isReadyStatus?.(PLUGIN_ID_RAPID_OCR)
-								}
+								disable={disableNormalScreenshotTool || !ocrServiceReady}
 								onClick={() => {
 									onToolClick(DrawState.OcrDetect);
 								}}
@@ -976,20 +982,14 @@ const DrawToolbarCore: React.FC<DrawToolbarProps> = ({
 							<ToolButton
 								hidden={
 									customToolbarToolHiddenMap?.[DrawState.OcrTranslate] ||
-									!(
-										isReadyStatus?.(PLUGIN_ID_RAPID_OCR) &&
-										isReadyStatus?.(PLUGIN_ID_TRANSLATE)
-									)
+									!(ocrServiceReady && isReadyStatus?.(PLUGIN_ID_TRANSLATE))
 								}
 								componentKey={DrawToolbarKeyEventKey.OcrTranslateTool}
 								icon={<OcrTranslateIcon style={{ fontSize: "1em" }} />}
 								drawState={DrawState.OcrTranslate}
 								disable={
 									disableNormalScreenshotTool ||
-									!(
-										isReadyStatus?.(PLUGIN_ID_RAPID_OCR) &&
-										isReadyStatus?.(PLUGIN_ID_TRANSLATE)
-									)
+									!(ocrServiceReady && isReadyStatus?.(PLUGIN_ID_TRANSLATE))
 								}
 								onClick={() => {
 									onToolClick(DrawState.OcrTranslate);

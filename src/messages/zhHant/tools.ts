@@ -110,6 +110,15 @@ export const tools = {
 	"tools.captureHistory.selectAll": "全選",
 	"tools.captureHistory.selectInvert": "反選",
 	"tools.captureHistory.deleteSelected.confirm": "確定要刪除選取的所有記錄嗎？",
-	"tools.captureHistory.clearAll": "清空所有記錄",
-	"tools.captureHistory.clearAll.confirm": "確定要清空所有記錄嗎？",
+	"tools.captureHistory.exportAll": "全部匯出",
+	"tools.captureHistory.exportAll.selectDirectory": "選擇截圖歷史匯出目錄",
+	"tools.captureHistory.exportAll.selectZipFile": "選擇截圖歷史 ZIP 匯出檔",
+	"tools.captureHistory.exportAll.empty": "暫無可匯出的截圖歷史",
+	"tools.captureHistory.exportAll.success": "已匯出 {count} 筆截圖歷史",
+	"tools.captureHistory.exportAll.failed": "匯出截圖歷史失敗",
+	"tools.captureHistory.clearAll": "全部刪除",
+	"tools.captureHistory.clearAll.confirm": "確定要刪除所有截圖歷史嗎？",
+	"tools.captureHistory.clearAll.secondConfirm": "再次確認刪除全部截圖歷史",
+	"tools.captureHistory.clearAll.secondConfirm.content":
+		"該操作會刪除所有截圖歷史記錄和對應圖片，刪除後無法復原。",
 };

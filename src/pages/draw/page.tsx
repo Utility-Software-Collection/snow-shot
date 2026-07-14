@@ -834,6 +834,27 @@ const DrawPageCore: React.FC<{
 		[getAppSettings, updateAppSettings, getScreenshotType],
 	);
 
+	const autoSaveToCloud = useCallback(
+		async (imageData: ArrayBuffer | HTMLCanvasElement | undefined) => {
+			if (
+				!imageData ||
+				!getAppSettings()[AppSettingsGroup.FunctionScreenshot].autoSaveToCloud
+			) {
+				return;
+			}
+
+			try {
+				const result = await saveCanvasToCloud(imageData, getAppSettings());
+				if (typeof result === "object" && "error" in result) {
+					appError("[DrawPageCore] auto save to cloud error", result.error);
+				}
+			} catch (error) {
+				appError("[DrawPageCore] auto save to cloud error", error);
+			}
+		},
+		[getAppSettings],
+	);
+
 	const onSave = useCallback(
 		async (fastSave: boolean = false) => {
 			if (getDrawState() === DrawState.ScrollScreenshot) {
@@ -890,6 +911,8 @@ const DrawPageCore: React.FC<{
 				if (!imagePath) {
 					return;
 				}
+
+				autoSaveToCloud(imageData);
 
 				if (!fastSave) {
 					updateAppSettings(
@@ -956,6 +979,8 @@ const DrawPageCore: React.FC<{
 						);
 					}
 
+					autoSaveToCloud(imageCanvas);
+
 					finishCapture();
 				},
 				getAppSettings()[AppSettingsGroup.Cache].prevImageFormat,
@@ -966,6 +991,7 @@ const DrawPageCore: React.FC<{
 		},
 		[
 			finishCapture,
+			autoSaveToCloud,
 			getAppSettings,
 			getDrawState,
 			saveCaptureHistory,
@@ -1203,6 +1229,7 @@ const DrawPageCore: React.FC<{
 							);
 						})
 					: Promise.resolve(),
+				autoSaveToCloud(imageData),
 			]).finally(() => {
 				scrollScreenshotClear();
 			});
@@ -1340,9 +1367,12 @@ const DrawPageCore: React.FC<{
 					}
 				}
 			}
+
+			autoSaveToCloud(imageCanvas);
 		}
 	}, [
 		finishCapture,
+		autoSaveToCloud,
 		getAppSettings,
 		getDrawState,
 		saveCaptureHistory,

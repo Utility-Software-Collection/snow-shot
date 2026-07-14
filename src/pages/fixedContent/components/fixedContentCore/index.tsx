@@ -37,7 +37,6 @@ import { OcrTranslateIcon } from "@/components/icons";
 import { INIT_CONTAINER_KEY } from "@/components/imageLayer/actions";
 import {
 	PLUGIN_ID_AI_CHAT,
-	PLUGIN_ID_RAPID_OCR,
 	PLUGIN_ID_TRANSLATE,
 } from "@/constants/pluginService";
 import { AntdContext } from "@/contexts/antdContext";
@@ -81,6 +80,7 @@ import { generateImageFileName } from "@/utils/file";
 import { formatKey } from "@/utils/format";
 import { appError } from "@/utils/log";
 import { MousePosition } from "@/utils/mousePosition";
+import { isOcrServiceAvailable } from "@/utils/ocr";
 import { TweenAnimation } from "@/utils/tweenAnimation";
 import { closeWindowComplete } from "@/utils/window";
 import { zIndexs } from "@/utils/zIndex";
@@ -802,8 +802,10 @@ const FixedContentCoreInner: React.FC<{
 
 			if (
 				!(
-					isReady?.(PLUGIN_ID_RAPID_OCR) &&
-					getAppSettings()[AppSettingsGroup.FunctionFixedContent].autoOcr
+					isOcrServiceAvailable(
+						getAppSettings()[AppSettingsGroup.FunctionOcr],
+						isReady,
+					) && getAppSettings()[AppSettingsGroup.FunctionFixedContent].autoOcr
 				) &&
 				!params.allOcrResult
 			) {
@@ -865,7 +867,10 @@ const FixedContentCoreInner: React.FC<{
 					setEnableSelectText(true);
 					ocrResultActionRef.current.setEnable(true);
 				} else if (
-					isReady?.(PLUGIN_ID_RAPID_OCR) &&
+					isOcrServiceAvailable(
+						getAppSettings()[AppSettingsGroup.FunctionOcr],
+						isReady,
+					) &&
 					getAppSettings()[AppSettingsGroup.FunctionFixedContent].autoOcr
 				) {
 					ocrResultActionRef.current?.init({
@@ -1432,6 +1437,13 @@ const FixedContentCoreInner: React.FC<{
 			const { width: newWidth, height: newHeight } =
 				getWindowPhysicalSize(targetScale);
 
+			setScale({
+				x: targetScale,
+				y: targetScale,
+			});
+			ocrResultActionRef.current?.setScale(targetScale);
+			showScaleInfoTemporary();
+
 			if (zoomWithMouse && !ignoreMouse) {
 				try {
 					// 获取当前鼠标位置和窗口位置
@@ -1467,13 +1479,6 @@ const FixedContentCoreInner: React.FC<{
 					appWindow.setSize(new PhysicalSize(newWidth, newHeight)),
 				]);
 			}
-
-			setScale({
-				x: targetScale,
-				y: targetScale,
-			});
-			ocrResultActionRef.current?.setScale(targetScale);
-			showScaleInfoTemporary();
 		},
 		[
 			enableDrawRef,
@@ -1893,8 +1898,10 @@ const FixedContentCoreInner: React.FC<{
 							},
 						]
 					: []),
-				isReadyStatus(PLUGIN_ID_RAPID_OCR) ||
-				getSelectTextMode(fixedContentType) !== "ocr"
+				isOcrServiceAvailable(
+					getAppSettings()[AppSettingsGroup.FunctionOcr],
+					isReadyStatus,
+				) || getSelectTextMode(fixedContentType) !== "ocr"
 					? {
 							id: `${appWindow.label}-ocrTool`,
 							text:
@@ -2119,6 +2126,7 @@ const FixedContentCoreInner: React.FC<{
 		enableSaveToCloud,
 		onSaveToCloud,
 		enableTrayIcon,
+		getAppSettings,
 	]);
 
 	const onWheel = useCallback(

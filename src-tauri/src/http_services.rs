@@ -36,3 +36,31 @@ pub async fn upload_to_s3(request: tauri::ipc::Request<'_>) -> Result<String, St
     )
     .await
 }
+
+#[command]
+pub async fn upload_to_webdav(request: tauri::ipc::Request<'_>) -> Result<String, String> {
+    let data = match request.body() {
+        tauri::ipc::InvokeBody::Raw(data) => data,
+        _ => return Err(String::from("[upload_to_webdav] Invalid request body")),
+    };
+
+    let url: String = get_request_string_header(&request, "x-url")?;
+    let username: String = get_request_string_header(&request, "x-username")?;
+    let password: String = get_request_string_header(&request, "x-password")?;
+    let path_prefix: Option<String> =
+        get_request_optional_string_header(&request, "x-path-prefix")?;
+    let filename: String = get_request_string_header(&request, "x-filename")?;
+    let content_type: Option<String> =
+        get_request_optional_string_header(&request, "x-content-type")?;
+
+    snow_shot_tauri_commands_http_service::upload_to_webdav(
+        url,
+        username,
+        password,
+        path_prefix,
+        data,
+        filename,
+        content_type,
+    )
+    .await
+}

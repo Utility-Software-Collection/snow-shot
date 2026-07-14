@@ -158,6 +158,7 @@ export enum TrayIconClickAction {
 
 export enum CloudSaveUrlType {
 	S3 = "s3",
+	WebDAV = "webdav",
 }
 
 export enum TrayIconDefaultIcon {
@@ -226,6 +227,11 @@ export enum AppSettingsTheme {
 	System = "system",
 }
 
+export enum AppSettingsRenderEngine {
+	WebGL = "webgl",
+	WebGPU = "webgpu",
+}
+
 export enum ColorPickerShowMode {
 	Always = 0,
 	BeyondSelectRect = 1,
@@ -245,6 +251,15 @@ export type CustomOcrModelConfig = {
 	rec_model: string;
 	/** 方向分类模型文件名 */
 	cls_model: string;
+};
+
+export type ExternalOcrApiConfig = {
+	/** 模型名称 */
+	model_name: string;
+	/** API 地址 */
+	api_uri: string;
+	/** API Key */
+	api_key: string;
 };
 
 export enum KeyDisplayDirection {
@@ -438,6 +453,10 @@ export type AppSettingsData = {
 		ocrModel: string;
 		/** 自定义文本识别模型配置列表 */
 		customOcrModelConfigList: CustomOcrModelConfig[];
+		/** 外部文本识别 API 配置列表 */
+		externalOcrApiConfigList: ExternalOcrApiConfig[];
+		/** OCR 嵌字结果跟随软件主题 */
+		ocrResultFollowTheme: boolean;
 		/** 将图片转为 HTML 的视觉理解模型 */
 		htmlVisionModel: string;
 		/** 图片转为 HTML 的 System 提示词 */
@@ -484,6 +503,8 @@ export type AppSettingsData = {
 		copyImageFileToClipboard: boolean;
 		/** 保存到云端 */
 		saveToCloud: boolean;
+		/** 截图后自动上传到云端 */
+		autoSaveToCloud: boolean;
 		/** 云端链接格式 */
 		cloudSaveUrlFormat: CloudSaveUrlFormat;
 		/** 云端资源代理网址 */
@@ -504,6 +525,14 @@ export type AppSettingsData = {
 		s3PathPrefix: string;
 		/** S3 强制路径样式 */
 		s3ForcePathStyle: boolean;
+		/** WebDAV 地址 */
+		webdavUrl: string;
+		/** WebDAV 用户名 */
+		webdavUsername: string;
+		/** WebDAV 密码 */
+		webdavPassword: string;
+		/** WebDAV 路径前缀 */
+		webdavPathPrefix: string;
 		/** 保存文件路径 */
 		saveFileDirectory: string;
 		/** 保存文件格式 */
@@ -593,6 +622,8 @@ export type AppSettingsData = {
 		recordCaptureHistory: boolean;
 		/** 截图历史保存编辑结果 */
 		historySaveEditResult: boolean;
+		/** 截图历史导出为压缩文件 */
+		exportCaptureHistoryAsZip: boolean;
 		/** OCR 热启动 */
 		ocrHotStart: boolean;
 		/** OCR 模型写入内存 */
@@ -624,6 +655,8 @@ export type AppSettingsData = {
 	[AppSettingsGroup.SystemCore]: {
 		/** 热加载页面数量 */
 		hotLoadPageCount: number;
+		/** 图片层渲染引擎 */
+		renderEngine: AppSettingsRenderEngine;
 	};
 	[AppSettingsGroup.FunctionGlobalShortcut]: {
 		/** 全屏窗口被聚焦时禁用全局快捷键 */

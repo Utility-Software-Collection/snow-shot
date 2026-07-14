@@ -30,7 +30,6 @@ import { IconLabel } from "@/components/iconLable";
 import { PathInput } from "@/components/pathInput";
 import { ResetSettingsButton } from "@/components/resetSettingsButton";
 import { getDefaultIconPath } from "@/components/trayIconLoader";
-import { PLUGIN_ID_RAPID_OCR } from "@/constants/pluginService";
 import { AppSettingsActionContext } from "@/contexts/appSettingsActionContext";
 import { usePluginServiceContext } from "@/contexts/pluginServiceContext";
 import { useAppSettingsLoad } from "@/hooks/useAppSettingsLoad";
@@ -45,6 +44,7 @@ import {
 	TrayIconDefaultIcon,
 } from "@/types/appSettings";
 import { DrawState } from "@/types/draw";
+import { isOcrServiceAvailable } from "@/utils/ocr";
 
 const { Option } = Select;
 
@@ -62,10 +62,14 @@ export const GeneralSettingsPage = () => {
 		Form.useForm<AppSettingsData[AppSettingsGroup.CommonTrayIcon]>();
 
 	const [appSettingsLoading, setAppSettingsLoading] = useStateRef(true);
+	const [functionOcrSettings, setFunctionOcrSettings] = useState<
+		AppSettingsData[AppSettingsGroup.FunctionOcr] | undefined
+	>(undefined);
 	useAppSettingsLoad(
 		useCallback(
 			(settings: AppSettingsData, preSettings?: AppSettingsData) => {
 				setAppSettingsLoading(false);
+				setFunctionOcrSettings(settings[AppSettingsGroup.FunctionOcr]);
 				if (
 					preSettings === undefined ||
 					preSettings[AppSettingsGroup.Common] !==
@@ -114,6 +118,13 @@ export const GeneralSettingsPage = () => {
 	);
 
 	const { isReadyStatus } = usePluginServiceContext();
+	const ocrServiceReady = useMemo(
+		() =>
+			functionOcrSettings
+				? isOcrServiceAvailable(functionOcrSettings, isReadyStatus)
+				: false,
+		[functionOcrSettings, isReadyStatus],
+	);
 
 	const customToolbarToolListOptions = useMemo(() => {
 		if (!isReadyStatus) {
@@ -190,12 +201,12 @@ export const GeneralSettingsPage = () => {
 				item.value === DrawState.OcrDetect ||
 				item.value === DrawState.OcrTranslate
 			) {
-				return isReadyStatus(PLUGIN_ID_RAPID_OCR);
+				return ocrServiceReady;
 			}
 
 			return true;
 		});
-	}, [intl, isReadyStatus]);
+	}, [intl, isReadyStatus, ocrServiceReady]);
 
 	const [defaultIconsOptions, setDefaultIconsOptions] = useState<
 		CheckboxOptionType<TrayIconDefaultIcon>[]

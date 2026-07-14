@@ -4,6 +4,7 @@ import {
 	AppSettingsFixedContentInitialPosition,
 	AppSettingsGroup,
 	AppSettingsLanguage,
+	AppSettingsRenderEngine,
 	AppSettingsTheme,
 	CloudSaveUrlFormat,
 	CloudSaveUrlType,
@@ -164,6 +165,8 @@ export const defaultAppSettingsData: AppSettingsData = {
 		htmlVisionModel: "",
 		ocrModel: OcrModel.RapidOcrV4,
 		customOcrModelConfigList: [],
+		externalOcrApiConfigList: [],
+		ocrResultFollowTheme: true,
 		htmlVisionModelSystemPrompt: `You are a professional image-to-HTML conversion engine. Your sole objective is to accurately convert images into clean, semantic HTML code.
 
 ## Conversion Rules (must follow)
@@ -252,6 +255,8 @@ Priority order (highest to lowest):
 		fastSave: false,
 		/** 保存到云端 */
 		saveToCloud: false,
+		/** 截图后自动上传到云端 */
+		autoSaveToCloud: false,
 		/** 云端保存协议 */
 		cloudSaveUrlType: CloudSaveUrlType.S3,
 		cloudSaveUrlFormat: CloudSaveUrlFormat.Origin,
@@ -263,6 +268,10 @@ Priority order (highest to lowest):
 		s3BucketName: "",
 		s3PathPrefix: "",
 		s3ForcePathStyle: false,
+		webdavUrl: "",
+		webdavUsername: "",
+		webdavPassword: "",
+		webdavPathPrefix: "",
 		saveFileDirectory: "",
 		saveFileFormat: ImageFormat.PNG,
 		ocrAfterAction: OcrDetectAfterAction.None,
@@ -324,6 +333,7 @@ Priority order (highest to lowest):
 		historyValidDuration: HistoryValidDuration.Week,
 		recordCaptureHistory: true,
 		historySaveEditResult: true,
+		exportCaptureHistoryAsZip: false,
 		/** 尝试使用 Bitmap 格式写入到剪贴板 */
 		tryWriteBitmapImageToClipboard: true,
 		/** 启用多显示器截图 */
@@ -341,6 +351,7 @@ Priority order (highest to lowest):
 	[AppSettingsGroup.SystemCore]: {
 		/// 热加载页面数量
 		hotLoadPageCount: 2,
+		renderEngine: AppSettingsRenderEngine.WebGL,
 	},
 	[AppSettingsGroup.FunctionGlobalShortcut]: {
 		disableOnFocusedFullScreenWindow: false,

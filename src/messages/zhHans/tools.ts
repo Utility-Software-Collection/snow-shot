@@ -110,6 +110,15 @@ export const tools = {
 	"tools.captureHistory.selectAll": "全选",
 	"tools.captureHistory.selectInvert": "反选",
 	"tools.captureHistory.deleteSelected.confirm": "确定要删除选中的所有记录吗？",
-	"tools.captureHistory.clearAll": "清空所有记录",
-	"tools.captureHistory.clearAll.confirm": "确定要清空所有记录吗？",
+	"tools.captureHistory.exportAll": "全部导出",
+	"tools.captureHistory.exportAll.selectDirectory": "选择截图历史导出目录",
+	"tools.captureHistory.exportAll.selectZipFile": "选择截图历史 ZIP 导出文件",
+	"tools.captureHistory.exportAll.empty": "暂无可导出的截图历史",
+	"tools.captureHistory.exportAll.success": "已导出 {count} 条截图历史",
+	"tools.captureHistory.exportAll.failed": "导出截图历史失败",
+	"tools.captureHistory.clearAll": "全部删除",
+	"tools.captureHistory.clearAll.confirm": "确定要删除所有截图历史吗？",
+	"tools.captureHistory.clearAll.secondConfirm": "再次确认删除全部截图历史",
+	"tools.captureHistory.clearAll.secondConfirm.content":
+		"该操作会删除所有截图历史记录和对应图片，删除后无法恢复。",
 };

@@ -115,6 +115,21 @@ export const tools = {
 	"tools.captureHistory.selectInvert": "Invert Selection",
 	"tools.captureHistory.deleteSelected.confirm":
 		"Confirm to delete all selected records?",
-	"tools.captureHistory.clearAll": "Clear All Records",
-	"tools.captureHistory.clearAll.confirm": "Confirm to clear all records?",
+	"tools.captureHistory.exportAll": "Export All",
+	"tools.captureHistory.exportAll.selectDirectory":
+		"Select screenshot history export directory",
+	"tools.captureHistory.exportAll.selectZipFile":
+		"Select screenshot history ZIP export file",
+	"tools.captureHistory.exportAll.empty": "No screenshot history to export",
+	"tools.captureHistory.exportAll.success":
+		"Exported {count} screenshot history records",
+	"tools.captureHistory.exportAll.failed":
+		"Failed to export screenshot history",
+	"tools.captureHistory.clearAll": "Delete All",
+	"tools.captureHistory.clearAll.confirm":
+		"Confirm to delete all screenshot history records?",
+	"tools.captureHistory.clearAll.secondConfirm":
+		"Confirm again to delete all screenshot history",
+	"tools.captureHistory.clearAll.secondConfirm.content":
+		"This will delete all screenshot history records and their images. This cannot be undone.",
 };

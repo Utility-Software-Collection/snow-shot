@@ -16,7 +16,6 @@ import {
 } from "@/constants/drawToolbarKeyEvent";
 import {
 	PLUGIN_ID_AI_CHAT,
-	PLUGIN_ID_RAPID_OCR,
 	PLUGIN_ID_TRANSLATE,
 } from "@/constants/pluginService";
 import { AppSettingsActionContext } from "@/contexts/appSettingsActionContext";
@@ -29,6 +28,7 @@ import {
 	CommonKeyEventGroup,
 	type CommonKeyEventKey,
 } from "@/types/core/commonKeyEvent";
+import { isOcrServiceAvailable } from "@/utils/ocr";
 
 export const HotKeySettingsPage = () => {
 	const { token } = theme.useToken();
@@ -48,9 +48,13 @@ export const HotKeySettingsPage = () => {
 	const [commonKeyEvent, setCommonKeyEvent] = useState<
 		AppSettingsData[AppSettingsGroup.CommonKeyEvent]
 	>(defaultCommonKeyEventSettings);
+	const [functionOcrSettings, setFunctionOcrSettings] = useState<
+		AppSettingsData[AppSettingsGroup.FunctionOcr] | undefined
+	>(undefined);
 	useAppSettingsLoad(
 		useCallback((settings: AppSettingsData, preSettings?: AppSettingsData) => {
 			setAppSettingsLoading(false);
+			setFunctionOcrSettings(settings[AppSettingsGroup.FunctionOcr]);
 
 			if (
 				preSettings === undefined ||
@@ -74,6 +78,13 @@ export const HotKeySettingsPage = () => {
 	const [currentPlatform] = usePlatform();
 
 	const { isReadyStatus } = usePluginServiceContext();
+	const ocrServiceReady = useMemo(
+		() =>
+			functionOcrSettings
+				? isOcrServiceAvailable(functionOcrSettings, isReadyStatus)
+				: false,
+		[functionOcrSettings, isReadyStatus],
+	);
 
 	const drawToolbarKeyEventFormItemList = useMemo(() => {
 		return Object.keys(defaultDrawToolbarKeyEventSettings)
@@ -92,14 +103,11 @@ export const HotKeySettingsPage = () => {
 				}
 
 				if (key === DrawToolbarKeyEventKey.OcrDetectTool) {
-					return isReadyStatus?.(PLUGIN_ID_RAPID_OCR);
+					return ocrServiceReady;
 				}
 
 				if (key === DrawToolbarKeyEventKey.OcrTranslateTool) {
-					return (
-						isReadyStatus?.(PLUGIN_ID_RAPID_OCR) &&
-						isReadyStatus?.(PLUGIN_ID_TRANSLATE)
-					);
+					return ocrServiceReady && isReadyStatus?.(PLUGIN_ID_TRANSLATE);
 				}
 
 				return true;
@@ -144,7 +152,13 @@ export const HotKeySettingsPage = () => {
 					</Col>
 				);
 			});
-	}, [currentPlatform, drawToolbarKeyEvent, isReadyStatus, updateAppSettings]);
+	}, [
+		currentPlatform,
+		drawToolbarKeyEvent,
+		isReadyStatus,
+		ocrServiceReady,
+		updateAppSettings,
+	]);
 
 	const keyEventFormItemList = useMemo(() => {
 		const groupFormItemMap: Record<CommonKeyEventGroup, React.ReactNode[]> = {

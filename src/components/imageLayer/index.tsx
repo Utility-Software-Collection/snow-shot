@@ -10,10 +10,13 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { AppSettingsPublisher } from "@/contexts/appSettingsActionContext";
+import { useStateSubscriber } from "@/hooks/useStateSubscriber";
 import { defaultWatermarkProps } from "@/pages/draw/components/drawToolbar/components/tools/drawExtraTool/components/watermarkTool";
 import type { CaptureBoundingBoxInfo } from "@/pages/draw/extra";
 import type { ImageSharedBufferData } from "@/pages/draw/tools";
 import type { FixedContentProcessImageConfig } from "@/pages/fixedContent/components/fixedContentCore";
+import { AppSettingsGroup, AppSettingsRenderEngine } from "@/types/appSettings";
 import type { ElementRect, ImageBuffer } from "@/types/commands/screenshot";
 import type { CaptureHistoryItem } from "@/utils/appStore";
 import { getCaptureHistoryImageAbsPath } from "@/utils/captureHistory";
@@ -241,6 +244,18 @@ export const ImageLayer: React.FC<ImageLayerProps> = ({
 		undefined,
 	);
 	const [hasInitRendererWorker, setHasInitRendererWorker] = useState(false);
+	const [renderEngine, setRenderEngine] = useState<AppSettingsRenderEngine>(
+		AppSettingsRenderEngine.WebGL,
+	);
+	useStateSubscriber(
+		AppSettingsPublisher,
+		useCallback((settings) => {
+			setRenderEngine(
+				settings?.[AppSettingsGroup.SystemCore]?.renderEngine ??
+					AppSettingsRenderEngine.WebGL,
+			);
+		}, []),
+	);
 
 	useEffect(() => {
 		const worker = supportOffscreenCanvas()
@@ -317,7 +332,7 @@ export const ImageLayer: React.FC<ImageLayerProps> = ({
 				},
 				autoStart: false,
 				canvas: offscreenCanvasRef.current ?? canvas,
-				preference: "webgl",
+				preference: renderEngine,
 				multiView: false,
 				antialias,
 			};
@@ -331,7 +346,13 @@ export const ImageLayer: React.FC<ImageLayerProps> = ({
 
 			await onInitCanvasReady?.();
 		},
-		[rendererWorker, onInitCanvasReady, disabled, hasInitRendererWorker],
+		[
+			rendererWorker,
+			onInitCanvasReady,
+			disabled,
+			hasInitRendererWorker,
+			renderEngine,
+		],
 	);
 
 	useEffect(() => {

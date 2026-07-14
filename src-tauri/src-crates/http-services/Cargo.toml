@@ -9,6 +9,7 @@ rust-s3 = { version = "0.35", default-features = false, features = ["tokio-rustl
 
 # 异步运行时
 tokio = { version = "1.47", features = ["full"] }
+reqwest = { workspace = true }
 
 # 序列化
 serde = { version = "1.0", features = ["derive"] }
@@ -19,4 +20,3 @@ thiserror = "2.0"
 
 # 日志
 log = "0.4"
-

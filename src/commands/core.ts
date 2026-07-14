@@ -262,8 +262,3 @@ export const setWindowRect = async (
 	const result = await invoke("set_window_rect", { minX, minY, maxX, maxY });
 	return result;
 };
-
-export const getCommitSha = async () => {
-	const result = await invoke<string>("get_commit_sha");
-	return result;
-};

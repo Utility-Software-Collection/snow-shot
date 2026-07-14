@@ -31,7 +31,6 @@ import {
 } from "antd";
 import type { AggregationColor } from "antd/es/color-picker/color";
 import {
-	type CSSProperties,
 	type DragEvent,
 	type FC,
 	type ReactNode,
@@ -44,6 +43,28 @@ import { FormattedMessage, useIntl } from "react-intl";
 import { ContentWrap } from "@/components/contentWrap";
 import { GroupTitle } from "@/components/groupTitle";
 import { IconLabel } from "@/components/iconLable";
+import {
+	ArrowSelectIcon,
+	BlurIcon,
+	CircleIcon,
+	DragWindowIcon,
+	DrawArrowIcon,
+	EraserIcon,
+	FastSaveIcon,
+	FixedIcon,
+	HighlightIcon,
+	MosaicIcon,
+	OcrDetectIcon,
+	OcrTranslateIcon,
+	PenIcon,
+	RectIcon,
+	SaveIcon,
+	SaveToCloudIcon,
+	ScrollScreenshotIcon,
+	SerialNumberIcon,
+	TextIcon,
+	WatermarkIcon,
+} from "@/components/icons";
 import {
 	PLUGIN_ID_RAPID_OCR,
 	PLUGIN_ID_TRANSLATE,
@@ -80,21 +101,6 @@ type PreviewTool = {
 
 const isColorObject = (value: unknown): value is AggregationColor => {
 	return typeof value === "object" && value !== null && "toHexString" in value;
-};
-
-const ToolbarPreviewGlyph: FC<{
-	children: ReactNode;
-	style?: CSSProperties;
-}> = ({ children, style }) => {
-	return (
-		<span className="toolbar-preview-glyph" style={style}>
-			{children}
-		</span>
-	);
-};
-
-const glyphIcon = (children: ReactNode, style?: CSSProperties) => {
-	return <ToolbarPreviewGlyph style={style}>{children}</ToolbarPreviewGlyph>;
 };
 
 const PreviewButton: FC<{
@@ -429,7 +435,7 @@ export const ToolbarPreviewSettingsPage = () => {
 			!isToolHidden(DrawState.Select) && {
 				key: "select",
 				label: intl.formatMessage({ id: "draw.selectTool" }),
-				icon: glyphIcon("↖", { fontSize: "1.08em" }),
+				icon: <ArrowSelectIcon />,
 				drawState: DrawState.Select,
 				active: true,
 			},
@@ -445,55 +451,55 @@ export const ToolbarPreviewSettingsPage = () => {
 			!isToolHidden(DrawState.Rect) && {
 				key: "rect",
 				label: intl.formatMessage({ id: "draw.rectTool" }),
-				icon: glyphIcon("□"),
+				icon: <RectIcon />,
 				drawState: DrawState.Rect,
 			},
 			!isToolHidden(DrawState.Ellipse) && {
 				key: "ellipse",
 				label: intl.formatMessage({ id: "draw.ellipseTool" }),
-				icon: glyphIcon("○"),
+				icon: <CircleIcon />,
 				drawState: DrawState.Ellipse,
 			},
 			!isToolHidden(DrawState.Arrow) && {
 				key: "arrow",
 				label: intl.formatMessage({ id: "draw.arrowTool" }),
-				icon: glyphIcon("↗"),
+				icon: <DrawArrowIcon />,
 				drawState: DrawState.Arrow,
 			},
 			!isToolHidden(DrawState.Pen) && {
 				key: "pen",
 				label: intl.formatMessage({ id: "draw.penTool" }),
-				icon: glyphIcon("✎", { fontSize: "1.08em" }),
+				icon: <PenIcon />,
 				drawState: DrawState.Pen,
 			},
 			!isToolHidden(DrawState.Text) && {
 				key: "text",
 				label: intl.formatMessage({ id: "draw.textTool" }),
-				icon: glyphIcon("T", { fontSize: "1.08em" }),
+				icon: <TextIcon />,
 				drawState: DrawState.Text,
 			},
 			!isToolHidden(DrawState.SerialNumber) && {
 				key: "serial-number",
 				label: intl.formatMessage({ id: "draw.serialNumberTool" }),
-				icon: glyphIcon("1", { fontSize: "1.16em" }),
+				icon: <SerialNumberIcon />,
 				drawState: DrawState.SerialNumber,
 			},
 			!isToolHidden(DrawState.Blur) && {
 				key: "blur",
 				label: intl.formatMessage({ id: "draw.blurTool" }),
-				icon: glyphIcon("B"),
+				icon: <BlurIcon />,
 				drawState: DrawState.Blur,
 			},
 			!isToolHidden(DrawState.Mosaic) && {
 				key: "mosaic",
 				label: intl.formatMessage({ id: "draw.mosaicTool" }),
-				icon: glyphIcon("▦"),
+				icon: <MosaicIcon />,
 				drawState: DrawState.Mosaic,
 			},
 			!isToolHidden(DrawState.Eraser) && {
 				key: "eraser",
 				label: intl.formatMessage({ id: "draw.eraserTool" }),
-				icon: glyphIcon("⌫", { fontSize: "0.9em" }),
+				icon: <EraserIcon />,
 				drawState: DrawState.Eraser,
 			},
 			(!isToolHidden(DrawState.Watermark) ||
@@ -524,14 +530,14 @@ export const ToolbarPreviewSettingsPage = () => {
 			!isToolHidden(DrawState.Fixed) && {
 				key: "fixed",
 				label: intl.formatMessage({ id: "draw.fixedTool" }),
-				icon: glyphIcon("F", { fontSize: "1.15em" }),
+				icon: <FixedIcon />,
 				drawState: DrawState.Fixed,
 			},
 			!isToolHidden(DrawState.OcrDetect) &&
 				(isReadyStatus?.(PLUGIN_ID_RAPID_OCR) ?? false) && {
 					key: "ocr-detect",
 					label: intl.formatMessage({ id: "draw.ocrDetectTool" }),
-					icon: glyphIcon("OCR", { fontSize: "0.58em", width: "2.2em" }),
+					icon: <OcrDetectIcon />,
 					drawState: DrawState.OcrDetect,
 				},
 			!isToolHidden(DrawState.OcrTranslate) &&
@@ -539,13 +545,13 @@ export const ToolbarPreviewSettingsPage = () => {
 				(isReadyStatus?.(PLUGIN_ID_TRANSLATE) ?? false) && {
 					key: "ocr-translate",
 					label: intl.formatMessage({ id: "draw.ocrTranslateTool" }),
-					icon: glyphIcon("TR", { fontSize: "0.68em", width: "1.8em" }),
+					icon: <OcrTranslateIcon />,
 					drawState: DrawState.OcrTranslate,
 				},
 			!isToolHidden(DrawState.ScrollScreenshot) && {
 				key: "scroll-screenshot",
 				label: intl.formatMessage({ id: "draw.scrollScreenshotTool" }),
-				icon: glyphIcon("SS", { fontSize: "0.68em", width: "1.8em" }),
+				icon: <ScrollScreenshotIcon />,
 				drawState: DrawState.ScrollScreenshot,
 			},
 			previewState.functionScreenshot.fastSave && {
@@ -553,7 +559,7 @@ export const ToolbarPreviewSettingsPage = () => {
 				label: intl.formatMessage({
 					id: "settings.functionSettings.screenshotSettings.autoSaveFileMode.fastSave",
 				}),
-				icon: glyphIcon("FS", { fontSize: "0.68em", width: "1.8em" }),
+				icon: <FastSaveIcon />,
 				drawState: DrawState.FastSave,
 			},
 			previewState.functionScreenshot.saveToCloud && {
@@ -561,13 +567,13 @@ export const ToolbarPreviewSettingsPage = () => {
 				label: intl.formatMessage({
 					id: "settings.functionSettings.screenshotSettings.saveToCloud",
 				}),
-				icon: glyphIcon("CL", { fontSize: "0.68em", width: "1.8em" }),
+				icon: <SaveToCloudIcon />,
 				drawState: DrawState.SaveToCloud,
 			},
 			{
 				key: "save",
 				label: intl.formatMessage({ id: "draw.saveTool" }),
-				icon: glyphIcon("S"),
+				icon: <SaveIcon />,
 				drawState: DrawState.Save,
 			},
 			{
@@ -611,12 +617,12 @@ export const ToolbarPreviewSettingsPage = () => {
 			{
 				key: "drag-window",
 				label: intl.formatMessage({ id: "draw.dragWindow" }),
-				icon: glyphIcon("↕", { fontSize: "1.15em" }),
+				icon: <DragWindowIcon />,
 			},
 			{
 				key: "select",
 				label: intl.formatMessage({ id: "draw.selectTool" }),
-				icon: glyphIcon("↖", { fontSize: "1.2em" }),
+				icon: <ArrowSelectIcon />,
 				active: true,
 			},
 			!previewState.functionDraw.lockDrawTool && {
@@ -631,57 +637,57 @@ export const ToolbarPreviewSettingsPage = () => {
 			{
 				key: "rect",
 				label: intl.formatMessage({ id: "draw.rectTool" }),
-				icon: glyphIcon("□"),
+				icon: <RectIcon />,
 			},
 			{
 				key: "ellipse",
 				label: intl.formatMessage({ id: "draw.ellipseTool" }),
-				icon: glyphIcon("○"),
+				icon: <CircleIcon />,
 			},
 			{
 				key: "arrow",
 				label: intl.formatMessage({ id: "draw.arrowTool" }),
-				icon: glyphIcon("↗"),
+				icon: <DrawArrowIcon />,
 			},
 			{
 				key: "pen",
 				label: intl.formatMessage({ id: "draw.penTool" }),
-				icon: glyphIcon("✎", { fontSize: "1.15em" }),
+				icon: <PenIcon />,
 			},
 			{
 				key: "text",
 				label: intl.formatMessage({ id: "draw.textTool" }),
-				icon: glyphIcon("T", { fontSize: "1.15em" }),
+				icon: <TextIcon />,
 			},
 			{
 				key: "serial-number",
 				label: intl.formatMessage({ id: "draw.serialNumberTool" }),
-				icon: glyphIcon("1", { fontSize: "1.16em" }),
+				icon: <SerialNumberIcon />,
 			},
 			{
 				key: "blur",
 				label: intl.formatMessage({ id: "draw.blurTool" }),
-				icon: glyphIcon("B"),
+				icon: <BlurIcon />,
 			},
 			{
 				key: "mosaic",
 				label: intl.formatMessage({ id: "draw.mosaicTool" }),
-				icon: glyphIcon("▦"),
+				icon: <MosaicIcon />,
 			},
 			{
 				key: "eraser",
 				label: intl.formatMessage({ id: "draw.eraserTool" }),
-				icon: glyphIcon("⌫", { fontSize: "0.95em" }),
+				icon: <EraserIcon />,
 			},
 			{
 				key: "watermark",
 				label: intl.formatMessage({ id: "draw.watermarkTool" }),
-				icon: glyphIcon("W"),
+				icon: <WatermarkIcon />,
 			},
 			{
 				key: "highlight",
 				label: intl.formatMessage({ id: "draw.highlightTool" }),
-				icon: glyphIcon("H"),
+				icon: <HighlightIcon />,
 			},
 			createSplitter("fixed-splitter-history"),
 			{
@@ -1123,16 +1129,6 @@ export const ToolbarPreviewSettingsPage = () => {
                 .toolbar-preview-toolbar :global(.ant-btn-icon) {
                     display: flex;
                     align-items: center;
-                }
-
-                .toolbar-preview-glyph {
-                    display: inline-flex;
-                    align-items: center;
-                    justify-content: center;
-                    width: 1.2em;
-                    height: 1em;
-                    font-weight: 700;
-                    line-height: 1;
                 }
 
                 .toolbar-preview-splitter {
