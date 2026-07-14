@@ -536,12 +536,27 @@ const TrayIconLoaderComponent = () => {
 									.iconClickAction === TrayIconClickAction.Screenshot
 							) {
 								executeScreenshot();
-							} else if (
-								getAppSettings()[AppSettingsGroup.FunctionTrayIcon]
-									.iconClickAction === TrayIconClickAction.ShowMainWindow
-							) {
-								showWindow();
-							}
+						} else if (
+							getAppSettings()[AppSettingsGroup.FunctionTrayIcon]
+								.iconClickAction === TrayIconClickAction.ShowMainWindow
+						) {
+							showWindow();
+						} else if (
+							getAppSettings()[AppSettingsGroup.FunctionTrayIcon]
+								.iconClickAction === TrayIconClickAction.Translate
+						) {
+							executeTranslate();
+						} else if (
+							getAppSettings()[AppSettingsGroup.FunctionTrayIcon]
+								.iconClickAction === TrayIconClickAction.AiChat
+						) {
+							executeChat();
+						} else if (
+							getAppSettings()[AppSettingsGroup.FunctionTrayIcon]
+								.iconClickAction === TrayIconClickAction.CaptureHistory
+						) {
+							openCaptureHistory();
+						}
 						}
 						break;
 				}

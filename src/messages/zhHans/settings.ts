@@ -278,7 +278,7 @@ export const settings = {
 	"settings.functionSettings.outputSettings": "输出",
 	"settings.functionSettings.outputSettings.variables": "支持的变量",
 	"settings.functionSettings.outputSettings.variables.focusedWindowAppName":
-		"截取当前具有焦点的窗口的程序名",
+		"焦点窗口名称",
 	"settings.functionSettings.outputSettings.variables.date": "日期",
 	"settings.functionSettings.outputSettings.fileNameFormat": "文件名格式",
 	"settings.functionSettings.outputSettings.manualSaveFileNameFormat":
@@ -483,7 +483,7 @@ export const settings = {
 	"settings.functionSettings.translationSettings.apiConfig.apiUri.required":
 		"请输入 API 地址",
 	"settings.functionSettings.translationSettings.apiConfig.add":
-		"添加 LLM 配置",
+		"添加 API 配置",
 	"settings.functionSettings.translationSettings.apiConfig.apiKey.required":
 		"请输入 API Key",
 	"settings.functionSettings.translationSettings.apiConfig.deeplPreferQualityOptimized":
@@ -504,6 +504,12 @@ export const settings = {
 		"截图",
 	"settings.functionSettings.trayIconSettings.iconClickAction.showMainWindow":
 		"显示主窗口",
+	"settings.functionSettings.trayIconSettings.iconClickAction.translate":
+		"翻译",
+	"settings.functionSettings.trayIconSettings.iconClickAction.aiChat":
+		"AI 对话",
+	"settings.functionSettings.trayIconSettings.iconClickAction.captureHistory":
+		"截图历史",
 	"settings.systemSettings.dataFile": "软件数据",
 	"settings.systemSettings.dataDirectory": "数据目录",
 	"settings.systemSettings.dataFilePath.setDirectory.tip":

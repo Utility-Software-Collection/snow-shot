@@ -146,10 +146,29 @@ const AppSettingsContextProviderCore: React.FC<{
 			group: AppSettingsGroup,
 			data: AppSettingsData[typeof group],
 			syncAllWindow: boolean,
+			/** 用于合并磁盘已有内容，避免用本窗口可能过时的内存值覆盖其它字段 */
+			delta?: Partial<AppSettingsData[typeof group]> | string,
 		) => {
 			const filePath = await getFilePath(group);
+			// 先读磁盘已有内容，仅将本次变更叠加上去再写回，避免用本窗口内存中过时的字段把磁盘上已持久化的正确值覆盖掉
+			let content: AppSettingsData[typeof group] = data;
 			try {
-				await textFileWrite(filePath, JSON.stringify(data));
+				const existing = await textFileRead(filePath);
+				if (existing) {
+					const deltaObj =
+						delta && typeof delta === "object"
+							? (delta as Record<string, unknown>)
+							: (data as Record<string, unknown>);
+					content = {
+						...(JSON.parse(existing) as Record<string, unknown>),
+						...deltaObj,
+					} as AppSettingsData[typeof group];
+				}
+			} catch {
+				// 文件不存在或解析失败：直接使用 data 写入
+			}
+			try {
+				await textFileWrite(filePath, JSON.stringify(content));
 			} catch (error) {
 				appError(
 					`[writeAppSettings] write file ${filePath} failed: ${JSON.stringify(error)}`,
@@ -168,8 +187,9 @@ const AppSettingsContextProviderCore: React.FC<{
 					group: AppSettingsGroup,
 					data: AppSettingsData[typeof group],
 					syncAllWindow: boolean,
+					delta?: Partial<AppSettingsData[typeof group]> | string,
 				) => {
-					writeAppSettings(group, data, syncAllWindow);
+					writeAppSettings(group, data, syncAllWindow, delta);
 				},
 				1000,
 			),
@@ -1462,13 +1482,13 @@ const AppSettingsContextProviderCore: React.FC<{
 				ignorePublisher,
 			);
 
-			if (saveToFile) {
-				if (debounce) {
-					writeAppSettingsDebounce(group, settings, syncAllWindow);
-				} else {
-					writeAppSettings(group, settings, syncAllWindow);
-				}
+		if (saveToFile) {
+			if (debounce) {
+				writeAppSettingsDebounce(group, settings, syncAllWindow, val);
+			} else {
+				writeAppSettings(group, settings, syncAllWindow, val);
 			}
+		}
 
 			return settings;
 		},
@@ -1497,7 +1517,7 @@ const AppSettingsContextProviderCore: React.FC<{
 
 		await Promise.all(
 			(groups as AppSettingsGroup[]).map(async (group) => {
-				let fileContent = "";
+				let fileContent: string | null = null;
 				try {
 					// 创建文件夹成功的话，文件不存在，则不读取
 					fileContent = await textFileRead(await getFilePath(group));

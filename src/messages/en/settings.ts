@@ -290,7 +290,7 @@ export const settings = {
 	"settings.functionSettings.outputSettings": "Output Settings",
 	"settings.functionSettings.outputSettings.variables": "Supported Variables",
 	"settings.functionSettings.outputSettings.variables.focusedWindowAppName":
-		"Focused window application name",
+		"Focused window name",
 	"settings.functionSettings.outputSettings.variables.date": "Date",
 	"settings.functionSettings.outputSettings.fileNameFormat": "File Name Format",
 	"settings.functionSettings.outputSettings.manualSaveFileNameFormat":
@@ -532,6 +532,12 @@ export const settings = {
 		"Screenshot",
 	"settings.functionSettings.trayIconSettings.iconClickAction.showMainWindow":
 		"Show Main Window",
+	"settings.functionSettings.trayIconSettings.iconClickAction.translate":
+		"Translate",
+	"settings.functionSettings.trayIconSettings.iconClickAction.aiChat":
+		"AI Chat",
+	"settings.functionSettings.trayIconSettings.iconClickAction.captureHistory":
+		"Capture History",
 	"settings.systemSettings.dataFile": "App Data",
 	"settings.systemSettings.dataDirectory": "Data Directory",
 	"settings.systemSettings.dataFilePath.setDirectory.tip":

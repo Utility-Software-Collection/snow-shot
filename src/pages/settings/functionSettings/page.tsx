@@ -433,6 +433,24 @@ export const FunctionSettingsPage = () => {
 				}),
 				value: TrayIconClickAction.ShowMainWindow,
 			},
+			{
+				label: intl.formatMessage({
+					id: "settings.functionSettings.trayIconSettings.iconClickAction.translate",
+				}),
+				value: TrayIconClickAction.Translate,
+			},
+			{
+				label: intl.formatMessage({
+					id: "settings.functionSettings.trayIconSettings.iconClickAction.aiChat",
+				}),
+				value: TrayIconClickAction.AiChat,
+			},
+			{
+				label: intl.formatMessage({
+					id: "settings.functionSettings.trayIconSettings.iconClickAction.captureHistory",
+				}),
+				value: TrayIconClickAction.CaptureHistory,
+			},
 		];
 	}, [intl]);
 
@@ -1629,10 +1647,8 @@ export const FunctionSettingsPage = () => {
 													/>
 												}
 												fieldProps={{
-													autoSize: {
-														minRows: 1,
-														maxRows: 1,
-													},
+													rows: 1,
+													style: { resize: "vertical" },
 												}}
 											/>
 										</Col>
@@ -1647,10 +1663,8 @@ export const FunctionSettingsPage = () => {
 													/>
 												}
 												fieldProps={{
-													autoSize: {
-														minRows: 1,
-														maxRows: 1,
-													},
+													rows: 1,
+													style: { resize: "vertical" },
 												}}
 											/>
 										</Col>
@@ -1951,10 +1965,8 @@ export const FunctionSettingsPage = () => {
 											},
 										]}
 										fieldProps={{
-											autoSize: {
-												minRows: 1,
-												maxRows: 1,
-											},
+											rows: 1,
+											style: { resize: "vertical" },
 										}}
 									/>
 								</Col>
@@ -2086,132 +2098,128 @@ export const FunctionSettingsPage = () => {
 											model_name: "",
 										})}
 									>
-										<Row gutter={token.marginLG} style={{ width: "100%" }}>
-											<Col span={12}>
-												<ProFormText
-													name="model_name"
-													label={
-														<IconLabel
-															label={
-																<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.modelName" />
-															}
-															tooltipTitle={
-																<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.modelName.tip" />
-															}
-														/>
-													}
-													rules={[
-														{
-															required: true,
-															message: intl.formatMessage({
-																id: "settings.functionSettings.chatSettings.apiConfig.modelName.required",
-															}),
-														},
-													]}
-												/>
-											</Col>
-										</Row>
-										<Row gutter={token.marginLG}>
-											<Col span={12}>
-												<ProFormText
-													name="api_uri"
-													label={
-														<IconLabel
-															label={
-																<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.apiUri" />
-															}
-															tooltipTitle={
-																<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.apiUri.tip" />
-															}
-														/>
-													}
-													rules={[
-														{
-															required: true,
-															message: intl.formatMessage({
-																id: "settings.functionSettings.chatSettings.apiConfig.apiUri.required",
-															}),
-														},
-													]}
-												/>
-											</Col>
-											<Col span={12}>
-												<ProFormText.Password
-													name="api_key"
-													label={
-														<IconLabel
-															label={
-																<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.apiKey" />
-															}
-															tooltipTitle={
-																<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.apiKey.tip" />
-															}
-														/>
-													}
-													rules={[
-														{
-															required: true,
-															message: intl.formatMessage({
-																id: "settings.functionSettings.chatSettings.apiConfig.apiKey.required",
-															}),
-														},
-													]}
-												/>
-											</Col>
-											<Col span={12}>
-												<ProFormText
-													name="api_model"
-													label={
-														<IconLabel
-															label={
-																<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.apiModel" />
-															}
-															tooltipTitle={
-																<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.apiModel.tip" />
-															}
-														/>
-													}
-													rules={[
-														{
-															required: true,
-															message: intl.formatMessage({
-																id: "settings.functionSettings.chatSettings.apiConfig.apiModel.required",
-															}),
-														},
-													]}
-												/>
-											</Col>
-										</Row>
-										<Row gutter={token.marginLG}>
-											<Col span={12}>
-												<ProFormSwitch
-													name="support_thinking"
-													label={
-														<IconLabel
-															label={
-																<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.supportThinking" />
-															}
-														/>
-													}
-												/>
-											</Col>
-											{isReadyStatus?.(PLUGIN_ID_AI_CHAT) && (
-												<Col span={12}>
-													<ProFormSwitch
-														name="support_vision"
+									<Row gutter={token.marginLG}>
+										<Col span={12}>
+											<ProFormText
+												name="model_name"
+												label={
+													<IconLabel
 														label={
-															<IconLabel
-																label={
-																	<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.supportVision" />
-																}
-																tooltipTitle={
-																	<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.supportVision.tip" />
-																}
-															/>
+															<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.modelName" />
+														}
+														tooltipTitle={
+															<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.modelName.tip" />
 														}
 													/>
-												</Col>
-											)}
+												}
+												rules={[
+													{
+														required: true,
+														message: intl.formatMessage({
+															id: "settings.functionSettings.chatSettings.apiConfig.modelName.required",
+														}),
+													},
+												]}
+											/>
+										</Col>
+										<Col span={12}>
+											<ProFormText
+												name="api_model"
+												label={
+													<IconLabel
+														label={
+															<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.apiModel" />
+														}
+														tooltipTitle={
+															<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.apiModel.tip" />
+														}
+													/>
+												}
+												rules={[
+													{
+														required: true,
+														message: intl.formatMessage({
+															id: "settings.functionSettings.chatSettings.apiConfig.apiModel.required",
+														}),
+													},
+												]}
+											/>
+										</Col>
+										<Col span={12}>
+											<ProFormText
+												name="api_uri"
+												label={
+													<IconLabel
+														label={
+															<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.apiUri" />
+														}
+														tooltipTitle={
+															<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.apiUri.tip" />
+														}
+													/>
+												}
+												rules={[
+													{
+														required: true,
+														message: intl.formatMessage({
+															id: "settings.functionSettings.chatSettings.apiConfig.apiUri.required",
+														}),
+													},
+												]}
+											/>
+										</Col>
+										<Col span={12}>
+											<ProFormText.Password
+												name="api_key"
+												label={
+													<IconLabel
+														label={
+															<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.apiKey" />
+														}
+														tooltipTitle={
+															<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.apiKey.tip" />
+														}
+													/>
+												}
+												rules={[
+													{
+														required: true,
+														message: intl.formatMessage({
+															id: "settings.functionSettings.chatSettings.apiConfig.apiKey.required",
+														}),
+													},
+												]}
+											/>
+										</Col>
+										<Col span={12}>
+											<ProFormSwitch
+												name="support_thinking"
+												label={
+													<IconLabel
+														label={
+															<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.supportThinking" />
+														}
+													/>
+												}
+											/>
+										</Col>
+										{isReadyStatus?.(PLUGIN_ID_AI_CHAT) && (
+											<Col span={12}>
+												<ProFormSwitch
+													name="support_vision"
+													label={
+														<IconLabel
+															label={
+																<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.supportVision" />
+															}
+															tooltipTitle={
+																<FormattedMessage id="settings.functionSettings.chatSettings.apiConfig.supportVision.tip" />
+															}
+														/>
+													}
+												/>
+											</Col>
+										)}
 										</Row>
 									</ProFormList>
 								</Col>
@@ -2579,8 +2587,8 @@ export const FunctionSettingsPage = () => {
 											<FormattedMessage id="settings.functionSettings.videoRecordSettings.keyDisplaySettings" />
 										</SubGroupTitle>
 
-										<Row gutter={token.marginLG} style={{ width: "100%" }}>
-											<Col span={12} style={{ width: "100%" }}>
+										<Row gutter={token.marginLG}>
+											<Col span={12}>
 												<ProFormDigit
 													name="keyDisplayFontSize"
 													layout="horizontal"
@@ -2595,8 +2603,7 @@ export const FunctionSettingsPage = () => {
 													}}
 												/>
 											</Col>
-
-											<Col span={12} style={{ width: "100%" }}>
+											<Col span={12}>
 												<ProFormDigit
 													name="keyDisplayDuration"
 													layout="horizontal"
@@ -2612,9 +2619,6 @@ export const FunctionSettingsPage = () => {
 													}}
 												/>
 											</Col>
-										</Row>
-
-										<Row gutter={token.marginLG}>
 											<Col span={12}>
 												<ProFormDigit
 													name="keyDisplayMergeDuration"
@@ -2664,7 +2668,6 @@ export const FunctionSettingsPage = () => {
 													<ColorPicker showText placement="bottom" />
 												</ProForm.Item>
 											</Col>
-
 											<Col span={12}>
 												<ProForm.Item
 													name="keyDisplayTextColor"

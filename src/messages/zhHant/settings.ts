@@ -278,7 +278,7 @@ export const settings = {
 	"settings.functionSettings.outputSettings": "輸出",
 	"settings.functionSettings.outputSettings.variables": "支援的變數",
 	"settings.functionSettings.outputSettings.variables.focusedWindowAppName":
-		"擷取目前具有焦點的視窗的程式名稱",
+		"焦點視窗名稱",
 	"settings.functionSettings.outputSettings.variables.date": "日期",
 	"settings.functionSettings.outputSettings.fileNameFormat": "檔案名稱格式",
 	"settings.functionSettings.outputSettings.manualSaveFileNameFormat":
@@ -483,7 +483,7 @@ export const settings = {
 	"settings.functionSettings.translationSettings.apiConfig.apiUri.required":
 		"請輸入 API 位址",
 	"settings.functionSettings.translationSettings.apiConfig.add":
-		"新增 LLM 配置",
+		"新增 API 配置",
 	"settings.functionSettings.translationSettings.apiConfig.apiKey.required":
 		"請輸入 API Key",
 	"settings.functionSettings.translationSettings.apiConfig.deeplPreferQualityOptimized":
@@ -504,6 +504,12 @@ export const settings = {
 		"截圖",
 	"settings.functionSettings.trayIconSettings.iconClickAction.showMainWindow":
 		"顯示主視窗",
+	"settings.functionSettings.trayIconSettings.iconClickAction.translate":
+		"翻譯",
+	"settings.functionSettings.trayIconSettings.iconClickAction.aiChat":
+		"AI 對話",
+	"settings.functionSettings.trayIconSettings.iconClickAction.captureHistory":
+		"截圖歷史",
 	"settings.systemSettings.dataFile": "軟體資料",
 	"settings.systemSettings.dataDirectory": "資料目錄",
 	"settings.systemSettings.dataFilePath.setDirectory.tip":
