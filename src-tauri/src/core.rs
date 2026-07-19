@@ -504,3 +504,8 @@ pub async fn set_window_rect(
 
     Ok(())
 }
+
+#[command]
+pub async fn get_commit_sha() -> String {
+    option_env!("COMMIT_SHA").unwrap_or("unknown").to_string()
+}

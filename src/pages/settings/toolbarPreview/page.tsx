@@ -11,7 +11,8 @@ import {
 	RedoOutlined,
 	UndoOutlined,
 } from "@ant-design/icons";
-import ProForm, {
+import {
+	ProForm,
 	ProFormSelect,
 	ProFormSlider,
 	ProFormSwitch,
