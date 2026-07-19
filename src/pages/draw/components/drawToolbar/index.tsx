@@ -38,6 +38,7 @@ import {
 	ScrollScreenshotIcon,
 	SerialNumberIcon,
 	TextIcon,
+	TranslationIcon,
 } from "@/components/icons";
 import { PLUGIN_ID_TRANSLATE } from "@/constants/pluginService";
 import { AntdContext } from "@/contexts/antdContext";
@@ -98,6 +99,7 @@ export type DrawToolbarProps = {
 	onTopWindow: () => void;
 	onCopyToClipboard: () => void;
 	onOcrDetect: () => void;
+	onTranslateOcrToPage: () => void;
 };
 
 export type DrawToolbarActionType = {
@@ -145,6 +147,7 @@ const DrawToolbarCore: React.FC<DrawToolbarProps> = ({
 	onCopyToClipboard,
 	onTopWindow,
 	onOcrDetect,
+	onTranslateOcrToPage,
 }) => {
 	const { updateAppSettings } = useContext(AppSettingsActionContext);
 	const { drawLayerActionRef, selectLayerActionRef } = useContext(DrawContext);
@@ -996,17 +999,29 @@ const DrawToolbarCore: React.FC<DrawToolbarProps> = ({
 								}}
 							/>
 
+							{/* 转到翻译页 */}
+							<ToolButton
+								hidden={
+									!(
+										ocrServiceReady &&
+										isReadyStatus?.(PLUGIN_ID_TRANSLATE)
+									)
+								}
+								componentKey={DrawToolbarKeyEventKey.OpenTranslationTool}
+								icon={<TranslationIcon style={{ fontSize: "0.86em" }} />}
+								drawState={DrawState.LaserPointer}
+								onClick={() => {
+									onTranslateOcrToPage();
+								}}
+							/>
+
 							{/* 滚动截图 */}
 							<ToolButton
 								hidden={
 									customToolbarToolHiddenMap?.[DrawState.ScrollScreenshot]
 								}
 								componentKey={DrawToolbarKeyEventKey.ScrollScreenshotTool}
-								icon={
-									<div style={{ position: "relative", top: "0.11em" }}>
-										<ScrollScreenshotIcon style={{ fontSize: "1.2em" }} />
-									</div>
-								}
+								icon={<ScrollScreenshotIcon style={{ fontSize: "1.2em" }} />}
 								drawState={DrawState.ScrollScreenshot}
 								onClick={() => {
 									onToolClick(DrawState.ScrollScreenshot);
@@ -1043,7 +1058,7 @@ const DrawToolbarCore: React.FC<DrawToolbarProps> = ({
 							<ToolButton
 								hidden={customToolbarToolHiddenMap?.[DrawState.Save]}
 								componentKey={DrawToolbarKeyEventKey.SaveTool}
-								icon={<SaveIcon style={{ fontSize: "1em" }} />}
+								icon={<SaveIcon style={{ fontSize: "1.1em" }} />}
 								drawState={DrawState.Save}
 								onClick={() => {
 									onSave();

@@ -170,6 +170,10 @@ export const defaultDrawToolbarKeyEventSettings: Record<
 		hotKey: getPlatformValue("Ctrl+R", "Meta+R"),
 		unique: true,
 	},
+	[DrawToolbarKeyEventKey.OpenTranslationTool]: {
+		hotKey: "",
+		unique: true,
+	},
 };
 
 const DrawToolbarKeyEventSettingsKeys = Object.keys(
