@@ -119,6 +119,9 @@ export const settings = {
 	"settings.systemSettings.commonSettings.runLog": "运行日志",
 	"settings.systemSettings.commonSettings.runLog.tip":
 		"将日志输出到日志文件中，用于问题反馈",
+	"settings.systemSettings.commonSettings.boostProcessPriority": "提升进程优先级",
+	"settings.systemSettings.commonSettings.boostProcessPriority.tip":
+		"将应用进程优先级提升为「高于正常」，使截图与全局快捷键的响应更及时（仅 Windows）",
 	"settings.hotKeySettings.translation": "翻译",
 	"settings.hotKeySettings.chat": "AI 对话",
 	"settings.hotKeySettings.keyEventTooltip": "{message}（{key}）",
@@ -234,7 +237,7 @@ export const settings = {
 	"settings.functionSettings.screenshotSettings.ocrCopyText":
 		"文本识别复制时复制文本",
 	"settings.functionSettings.screenshotSettings.focusedWindowCopyToClipboard":
-		"截取当前具有焦点的窗口时复制到剪贴板",
+		"截取焦点窗口时复制到剪贴板",
 	"settings.functionSettings.screenshotSettings.fullScreenCopyToClipboard":
 		"截取全屏时复制到剪贴板",
 	"settings.functionSettings.screenshotSettings.saveToCloud": "保存到云端按钮",
@@ -308,11 +311,11 @@ export const settings = {
 	"settings.functionSettings.outputSettings.fastSaveFileNameFormatPreview":
 		"快速保存文件名预览",
 	"settings.functionSettings.outputSettings.focusedWindowFileNameFormat":
-		"截取当前具有焦点的窗口文件名格式",
+		"截取焦点窗口文件名格式",
 	"settings.functionSettings.outputSettings.fullScreenFileNameFormat":
 		"截取全屏文件名格式",
 	"settings.functionSettings.outputSettings.focusedWindowFileNameFormatPreview":
-		"截取当前具有焦点的窗口文件名预览",
+		"截取焦点窗口文件名预览",
 	"settings.functionSettings.outputSettings.uploadToCloudSaveUrlFormat":
 		"上传到云端文件名格式",
 	"settings.functionSettings.outputSettings.uploadToCloudSaveUrlFormatPreview":
@@ -696,7 +699,7 @@ export const settings = {
 		"图片转为 Markdown 的 System 提示词",
 	"settings.functionSettings.globalShortcutSettings": "全局快捷键",
 	"settings.functionSettings.globalShortcutSettings.disableOnFocusedFullScreenWindow":
-		"存在被聚焦的全屏窗口时自动禁用",
+		"焦点在全屏窗口上时自动禁用",
 	"settings.functionSettings.globalShortcutSettings.disableOnFocusedFullScreenWindow.tip":
-		"开启后，当存在被聚焦的全屏窗口时，将自动禁用全局快捷键",
+		"开启后，当焦点在全屏窗口上时，将自动禁用全局快捷键",
 };

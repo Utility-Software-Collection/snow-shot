@@ -18,12 +18,14 @@ import {
 	Divider,
 	Space,
 	Tag,
+	Tooltip,
 	Typography,
 	theme,
 } from "antd";
 import { compare } from "compare-versions";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIntl } from "react-intl";
+import { getCommitSha } from "@/commands/core";
 import { getLatestVersion } from "@/components/checkVersion";
 
 const { Title, Paragraph, Text } = Typography;
@@ -55,6 +57,7 @@ export const AboutPage = () => {
 	const intl = useIntl();
 	const [version, setVersion] = useState("0.1.3");
 	const [latestVersion, setLatestVersion] = useState<string>();
+	const [commitSha, setCommitSha] = useState("");
 	const [forkLatestRelease, setForkLatestRelease] = useState<GithubRelease>();
 	const [releaseCheckLoading, setReleaseCheckLoading] = useState(false);
 	const [releaseCheckError, setReleaseCheckError] = useState(false);
@@ -73,6 +76,9 @@ export const AboutPage = () => {
 		if (latestVersion) {
 			setLatestVersion(latestVersion);
 		}
+
+		const commitSha = await getCommitSha();
+		setCommitSha(commitSha);
 	}, []);
 
 	useEffect(() => {
@@ -193,14 +199,16 @@ export const AboutPage = () => {
 					</Text>
 				</div>
 				<div style={{ marginTop: token.margin }}>
-					<Tag color="blue">
-						<a
-							style={{ color: token.colorLink }}
-							onClick={() => openUrl("https://snowshot.top/")}
-						>
-							{intl.formatMessage({ id: "about.version" })} {version}
-						</a>
-					</Tag>
+					<Tooltip title={commitSha ? `Commit SHA: ${commitSha}` : undefined}>
+						<Tag color="blue">
+							<a
+								style={{ color: token.colorLink }}
+								onClick={() => openUrl("https://snowshot.top/")}
+							>
+								{intl.formatMessage({ id: "about.version" })} {version}
+							</a>
+						</Tag>
+					</Tooltip>
 					<Tag color="green">
 						<a
 							style={{ color: token.colorLink }}

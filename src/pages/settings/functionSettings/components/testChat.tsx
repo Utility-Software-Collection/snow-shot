@@ -1,5 +1,5 @@
 import { ApiOutlined } from "@ant-design/icons";
-import { ModalForm } from "@ant-design/pro-form";
+import { ModalForm } from "@ant-design/pro-components";
 import { Alert, Spin, theme } from "antd";
 import OpenAI from "openai";
 import type React from "react";

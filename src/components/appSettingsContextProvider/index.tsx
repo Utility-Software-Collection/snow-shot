@@ -785,6 +785,11 @@ const AppSettingsContextProviderCore: React.FC<{
 						typeof newSettings?.runLog === "boolean"
 							? newSettings.runLog
 							: (prevSettings?.runLog ?? defaultAppSettingsData[group].runLog),
+					boostProcessPriority:
+						typeof newSettings?.boostProcessPriority === "boolean"
+							? newSettings.boostProcessPriority
+							: (prevSettings?.boostProcessPriority ??
+								defaultAppSettingsData[group].boostProcessPriority),
 				};
 			} else if (group === AppSettingsGroup.SystemChat) {
 				newSettings = newSettings as AppSettingsData[typeof group];
@@ -1759,7 +1764,13 @@ const AppSettingsContextProviderCore: React.FC<{
 
 	return (
 		<AppSettingsActionContext.Provider value={appSettingsContextValue}>
-			<ConfigProvider theme={antdTheme} locale={antdLocale}>
+			<ConfigProvider
+				theme={antdTheme}
+				locale={antdLocale}
+				modal={{ mask: { blur: false } }}
+				drawer={{ mask: { blur: false } }}
+				tag={{ styles: { root: { marginInlineEnd: 8 } } }}
+			>
 				<IntlProvider
 					locale={appSettings[AppSettingsGroup.Common].language}
 					messages={messages[appSettings[AppSettingsGroup.Common].language]}

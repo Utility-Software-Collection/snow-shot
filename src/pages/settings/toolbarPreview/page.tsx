@@ -15,7 +15,7 @@ import ProForm, {
 	ProFormSelect,
 	ProFormSlider,
 	ProFormSwitch,
-} from "@ant-design/pro-form";
+} from "@ant-design/pro-components";
 import {
 	Button,
 	type CheckboxOptionType,
