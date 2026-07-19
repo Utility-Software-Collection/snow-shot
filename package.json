@@ -17,6 +17,7 @@
 		"build": "rsbuild build",
 		"build:fixed-runtime": "tauri build --config src-tauri/webview2.x64.json",
 		"dev": "rsbuild dev --port 8083",
+		"tauri": "tauri",
 		"preview": "rsbuild preview",
 		"lint": "biome format ./ && biome check ./",
 		"lint:fix": "biome format ./ --write && biome check --write ./src",
