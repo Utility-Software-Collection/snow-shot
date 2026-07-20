@@ -257,10 +257,15 @@ jobs:
       - name: Download and setup WebView2 Fixed Runtime
         if: matrix.platform == 'windows-latest' && matrix.fixedRuntime == true
         run: |
-          # 下载 WebView2 Fixed Runtime v130.0.2849.80
-          $runtimeVersion = "130.0.2849.80"
-          $cabUrl = "https://github.com/westinyang/WebView2RuntimeArchive/releases/download/130.0.2849.80/Microsoft.WebView2.FixedVersionRuntime.130.0.2849.80.x64.cab"
-          $cabFile = "Microsoft.WebView2.FixedVersionRuntime.$runtimeVersion.x64.cab"
+          # 与 Tauri 的 fixedRuntime 配置保持一致，避免下载版本与打包资源目录不匹配。
+          $runtimeDir = (Get-Content "src-tauri\webview2.x64.json" | ConvertFrom-Json).bundle.windows.webviewInstallMode.path
+          if ($runtimeDir -notmatch '^Microsoft\.WebView2\.FixedVersionRuntime\.(?<version>.+)\.x64$') {
+            throw "Unexpected WebView2 Fixed Runtime directory: $runtimeDir"
+          }
+
+          $runtimeVersion = $Matches.version
+          $cabFile = "$runtimeDir.cab"
+          $cabUrl = "https://github.com/westinyang/WebView2RuntimeArchive/releases/download/$runtimeVersion/$cabFile"
 
           Write-Host "Downloading WebView2 Fixed Runtime $runtimeVersion..."
           Invoke-WebRequest -Uri $cabUrl -OutFile $cabFile

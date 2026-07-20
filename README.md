@@ -33,6 +33,7 @@
 >关于xiaofei分支的介绍可以前往 [此处](https://github.com/mg-chao/snow-shot/issues/1000) 查看
 >
 >本项目在xiaofei的基础上，进行了进一步的开发和改进，添加了新的功能项
+>本项目部分采用 [Vibe coding](https://en.wikipedia.org/wiki/Vibe_coding) 方式开发，如不接受请选择官方或其他分支
 >
 >关于Macos版本，目前缺少测试人手，功能实现待测试，欢迎MacOS用户测试
 >
@@ -60,6 +61,7 @@ Snow Shot 追求简单高效的使用体验，希望每个用户都能依照直�
 - 关于页补充分支信息、仓库入口与 Release 检查入口
 - 更完整的 OCR 配置能力，支持外部 OCR API、自定义模型、热启动和结果主题跟随
 - 支持 WebDAV 云端上传，配合截图保存流程使用
+- 更完善的录屏体验
 
 ## 下载安装
 
