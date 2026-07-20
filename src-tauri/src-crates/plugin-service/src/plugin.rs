@@ -115,16 +115,16 @@ impl Plugin {
 
     async fn set_status(&self, status: PluginStatus) {
         let current_status = self.get_status().await;
-        if current_status != status {
-            if let Some(app_handle) = &*self.app_handle.read().await {
-                match app_handle.emit("plugin-status-change", ()) {
-                    Ok(_) => (),
-                    Err(e) => {
-                        log::error!(
-                            "[Plugin::set_status] Failed to emit plugin status change: {}",
-                            e
-                        );
-                    }
+        if current_status != status
+            && let Some(app_handle) = &*self.app_handle.read().await
+        {
+            match app_handle.emit("plugin-status-change", ()) {
+                Ok(_) => (),
+                Err(e) => {
+                    log::error!(
+                        "[Plugin::set_status] Failed to emit plugin status change: {}",
+                        e
+                    );
                 }
             }
         }
@@ -169,7 +169,7 @@ impl Plugin {
     ) -> Self {
         let relative_path = PathBuf::from(&version).join(&name);
 
-        let instance = Self {
+        Self {
             status: Arc::new(RwLock::new(PluginStatus::NotInstalled)),
             version,
             name,
@@ -179,9 +179,7 @@ impl Plugin {
             plugin_download_dir: plugin_download_dir.to_path_buf(),
             plugin_download_service_url,
             app_handle,
-        };
-
-        instance
+        }
     }
 
     #[allow(unused)]
@@ -327,7 +325,7 @@ impl Plugin {
             ));
         }
 
-        Self::extract_zip_to_dir(&zip_file_path, &self.get_plugin_dir().parent().unwrap()).await?;
+        Self::extract_zip_to_dir(&zip_file_path, self.get_plugin_dir().parent().unwrap()).await?;
 
         Ok(())
     }
@@ -460,7 +458,7 @@ impl Plugin {
         }
 
         // 如果插件文件列表为空，则创建插件目录，并设置为已安装状态，作为特殊情况处理
-        if self.file_list.len() == 0 {
+        if self.file_list.is_empty() {
             match fs::create_dir_all(&self.get_plugin_dir()).await {
                 Ok(_) => (),
                 Err(e) => {

@@ -10,6 +10,12 @@ pub struct ScrollScreenshotCaptureService {
     monitor_list: Option<Arc<MonitorList>>,
 }
 
+impl Default for ScrollScreenshotCaptureService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ScrollScreenshotCaptureService {
     pub fn new() -> Self {
         Self { monitor_list: None }

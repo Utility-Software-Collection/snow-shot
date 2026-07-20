@@ -1,3 +1,7 @@
+#[cfg(target_os = "macos")]
+use crate::screencapturekit_capture::{MacSystemAudioCapture, MacSystemAudioPipe};
+#[cfg(target_os = "windows")]
+use crate::wasapi_capture::WasapiCaptureSession;
 use ffmpeg_sidecar::{child::FfmpegChild, command::FfmpegCommand, event::FfmpegEvent};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -129,6 +133,10 @@ pub struct VideoRecordService {
     recording_params: Option<RecordingParams>, // 录制参数，用于恢复录制
     record_video_size: Option<(i32, i32)>,     // 录制视频大小
     ffmpeg_path: Option<PathBuf>,
+    #[cfg(target_os = "macos")]
+    system_audio_capture: Option<MacSystemAudioCapture>,
+    #[cfg(target_os = "windows")]
+    wasapi_capture: Option<WasapiCaptureSession>,
 }
 
 #[cfg(target_os = "macos")]
@@ -146,6 +154,12 @@ pub struct DeviceInfo {
     pub device_type: DeviceType,
 }
 
+impl Default for VideoRecordService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl VideoRecordService {
     pub fn new() -> Self {
         Self {
@@ -156,6 +170,10 @@ impl VideoRecordService {
             recording_params: None,
             record_video_size: None,
             ffmpeg_path: None,
+            #[cfg(target_os = "macos")]
+            system_audio_capture: None,
+            #[cfg(target_os = "windows")]
+            wasapi_capture: None,
         }
     }
 
@@ -238,6 +256,8 @@ impl VideoRecordService {
         }
     }
 
+    // Parameters mirror the video-recording command's persisted settings.
+    #[allow(clippy::too_many_arguments)]
     pub fn start(
         &mut self,
         min_x: i32,
@@ -361,26 +381,43 @@ impl VideoRecordService {
                 .arg(params.frame_rate.to_string());
         }
 
-        let mut audio_input = String::new();
+        let mut audio_inputs: Vec<String> = Vec::new();
+
+        #[cfg(target_os = "windows")]
+        let mut audio_pipe_handle = None;
+        #[cfg(target_os = "macos")]
+        let mut system_audio_pipe: Option<MacSystemAudioPipe> = None;
 
         // 根据平台添加音频输入
         #[cfg(target_os = "windows")]
         {
             // 添加系统音频输入
-            if params.enable_system_audio {
-                // command
-                //     .arg("-f")
-                //     .arg("dshow")
-                //     .arg("-i")
-                //     .arg("audio=virtual-audio-capturer");
-                // audio_inputs.push("1:a".to_string());
+            if params.format == VideoFormat::Mp4 && params.enable_system_audio {
+                let (pipe_name, pipe_handle) =
+                    WasapiCaptureSession::create_pipe().map_err(|error| {
+                        std::io::Error::other(format!(
+                            "Failed to create WASAPI audio pipe: {}",
+                            error
+                        ))
+                    })?;
+                command
+                    .arg("-f")
+                    .arg("f32le")
+                    .arg("-ar")
+                    .arg("48000")
+                    .arg("-ac")
+                    .arg("2")
+                    .arg("-i")
+                    .arg(&pipe_name);
+                audio_pipe_handle = Some(pipe_handle);
+                audio_inputs.push("1:a".to_string());
             }
 
             // 添加麦克风音频输入
-            if params.enable_microphone {
+            if params.format == VideoFormat::Mp4 && params.enable_microphone {
                 let device_names = self.get_microphone_device_names();
 
-                if device_names.len() > 0 {
+                if !device_names.is_empty() {
                     command.arg("-f").arg("dshow").arg("-i").arg(format!(
                         "audio={}",
                         if device_names.contains(&params.microphone_device_name) {
@@ -389,7 +426,7 @@ impl VideoRecordService {
                             device_names[0].clone()
                         }
                     ));
-                    audio_input = format!("{}:a", 1);
+                    audio_inputs.push(format!("{}:a", audio_inputs.len() + 1));
                 }
             }
         }
@@ -398,13 +435,15 @@ impl VideoRecordService {
         let monitor_list = MonitorList::all(true);
         #[cfg(target_os = "macos")]
         let mut target_monitor_index = 0;
+        #[cfg(target_os = "macos")]
+        let mut target_display_id = 0;
 
         // macOS 音频输入处理
         #[cfg(target_os = "macos")]
         {
             let device_info_list = self.get_device_info_list();
 
-            let audio_device = if params.enable_microphone {
+            let audio_device = if params.format == VideoFormat::Mp4 && params.enable_microphone {
                 device_info_list.iter().find(|d| {
                     d.device_type == DeviceType::Audio
                         && Self::format_device_name(d) == params.microphone_device_name
@@ -424,8 +463,17 @@ impl VideoRecordService {
                     max_y: params.max_y,
                 }) {
                     target_monitor_index = monitor_index;
+                    target_display_id = monitor.monitor.id().unwrap_or_default();
                     break;
                 }
+            }
+
+            if target_display_id == 0 {
+                target_display_id = monitor_list
+                    .iter()
+                    .next()
+                    .and_then(|monitor| monitor.monitor.id().ok())
+                    .unwrap_or_default();
             }
 
             // 判断是否存在对应的显示器
@@ -434,6 +482,11 @@ impl VideoRecordService {
                     && d.name == format!("Capture screen {}", target_monitor_index)
             }) {
                 target_monitor_index = 0;
+                target_display_id = monitor_list
+                    .iter()
+                    .next()
+                    .and_then(|monitor| monitor.monitor.id().ok())
+                    .unwrap_or_default();
                 log::warn!(
                     "[video_record_service::start_segment] No corresponding display found for microphone device: {}",
                     params.microphone_device_name
@@ -445,9 +498,29 @@ impl VideoRecordService {
                 command
                     .arg("-i")
                     .arg(format!("{}:{}", target_monitor_index, audio_device.index));
-                audio_input = format!("{}:a", audio_device.index);
+                audio_inputs.push("0:a".to_string());
             } else {
                 command.arg("-i").arg(format!("{}", target_monitor_index));
+            }
+
+            if params.format == VideoFormat::Mp4 && params.enable_system_audio {
+                let pipe = MacSystemAudioCapture::create_pipe().map_err(|error| {
+                    std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("Failed to create ScreenCaptureKit audio pipe: {error}"),
+                    )
+                })?;
+                command
+                    .arg("-f")
+                    .arg("f32le")
+                    .arg("-ar")
+                    .arg("48000")
+                    .arg("-ac")
+                    .arg("2")
+                    .arg("-i")
+                    .arg(&pipe.path);
+                system_audio_pipe = Some(pipe);
+                audio_inputs.push("1:a".to_string());
             }
         }
 
@@ -460,13 +533,13 @@ impl VideoRecordService {
         );
 
         // 确保输出文件的目录存在
-        if let Some(parent_dir) = std::path::Path::new(&segment_filename).parent() {
-            if let Err(e) = std::fs::create_dir_all(parent_dir) {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to create output directory: {}", e),
-                ));
-            }
+        if let Some(parent_dir) = std::path::Path::new(&segment_filename).parent()
+            && let Err(e) = std::fs::create_dir_all(parent_dir)
+        {
+            return Err(std::io::Error::other(format!(
+                "Failed to create output directory: {}",
+                e
+            )));
         }
 
         let mut video_filter = String::new();
@@ -503,7 +576,8 @@ impl VideoRecordService {
                         _ => "balanced", // 默认使用balanced
                     };
                     command.arg("-preset").arg(amf_preset);
-                } else if params.encoder.starts_with("libaom") || params.encoder.starts_with("av1_") {
+                } else if params.encoder.starts_with("libaom") || params.encoder.starts_with("av1_")
+                {
                     // AV1编码器使用global_quality参数 (详见 get_global_quality 函数注释)
                     let quality = get_global_quality(&params.encoder_preset);
                     command.arg("-global_quality").arg(quality.to_string());
@@ -593,12 +667,22 @@ impl VideoRecordService {
                 }
 
                 // 音频编码设置
-                if !audio_input.is_empty() {
+                if !audio_inputs.is_empty() {
                     command.arg("-c:a").arg("aac").arg("-b:a").arg("128k");
 
-                    // 音频处理，添加降噪
-                    let filter_complex =
-                        format!("[{}]anlmdn=s=10:p=0.001:r=0.005[aout]", audio_input);
+                    let filter_complex = if audio_inputs.len() == 1 {
+                        format!("[{}]anull[aout]", audio_inputs[0])
+                    } else {
+                        format!(
+                            "{}amix=inputs={}:duration=longest:dropout_transition=2[aout]",
+                            audio_inputs
+                                .iter()
+                                .map(|audio_input| format!("[{}]", audio_input))
+                                .collect::<Vec<_>>()
+                                .join(""),
+                            audio_inputs.len()
+                        )
+                    };
                     command.arg("-filter_complex").arg(filter_complex);
                     command.arg("-map").arg("0:v").arg("-map").arg("[aout]");
                 } else {
@@ -628,33 +712,90 @@ impl VideoRecordService {
         // 启动ffmpeg进程
         match command.spawn() {
             Ok(mut child) => {
-                for event in child.iter().unwrap() {
-                    if params.format == VideoFormat::Mp4 {
-                        match event {
-                            FfmpegEvent::Progress(_) => {
-                                self.child = Some(child);
-                                self.state = VideoRecordState::Recording;
-                                self.segments.push(segment_filename);
-                                self.segment_counter += 1;
-                                return Ok(());
-                            }
-                            _ => {}
+                #[cfg(target_os = "macos")]
+                if let Some(pipe) = system_audio_pipe.take() {
+                    match MacSystemAudioCapture::start(pipe, target_display_id) {
+                        Ok(capture) => {
+                            self.system_audio_capture = Some(capture);
+                        }
+                        Err(error) => {
+                            let _ = child.kill();
+                            let _ = child.wait();
+                            let _ = std::fs::remove_file(&segment_filename);
+                            self.state = VideoRecordState::Idle;
+                            return Err(std::io::Error::new(
+                                std::io::ErrorKind::Other,
+                                format!("Failed to start ScreenCaptureKit audio: {error}"),
+                            ));
                         }
                     }
                 }
 
-                Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    "Failed to start recording segment",
+                #[cfg(target_os = "windows")]
+                if let Some(pipe_handle) = audio_pipe_handle.take() {
+                    match WasapiCaptureSession::start(pipe_handle) {
+                        Ok(capture) => {
+                            self.wasapi_capture = Some(capture);
+                        }
+                        Err(error) => {
+                            let _ = child.kill();
+                            let _ = child.wait();
+                            let _ = std::fs::remove_file(&segment_filename);
+                            self.state = VideoRecordState::Idle;
+                            return Err(std::io::Error::other(format!(
+                                "Failed to start WASAPI capture: {}",
+                                error
+                            )));
+                        }
+                    }
+                }
+
+                for event in child.iter().unwrap() {
+                    if params.format == VideoFormat::Mp4
+                        && let FfmpegEvent::Progress(_) = event
+                    {
+                        self.child = Some(child);
+                        self.state = VideoRecordState::Recording;
+                        self.segments.push(segment_filename);
+                        self.segment_counter += 1;
+                        return Ok(());
+                    }
+                }
+
+                #[cfg(target_os = "windows")]
+                if let Some(mut capture) = self.wasapi_capture.take() {
+                    capture.stop();
+                }
+
+                #[cfg(target_os = "macos")]
+                if let Some(mut capture) = self.system_audio_capture.take() {
+                    capture.stop();
+                }
+
+                let _ = std::fs::remove_file(&segment_filename);
+                self.state = VideoRecordState::Idle;
+                Err(std::io::Error::other(
+                    "FFmpeg exited before recording produced a frame",
                 ))
             }
             Err(e) => {
+                #[cfg(target_os = "macos")]
+                if let Some(pipe) = system_audio_pipe.take() {
+                    let _ = std::fs::remove_file(pipe.path);
+                }
+
+                #[cfg(target_os = "windows")]
+                if let Some(pipe_handle) = audio_pipe_handle.take() {
+                    WasapiCaptureSession::close_pipe(pipe_handle);
+                }
+
+                let _ = std::fs::remove_file(&segment_filename);
                 self.state = VideoRecordState::Idle;
                 println!("FFmpeg start error: {}", e);
-                Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to start recording segment: {}", e),
-                ))
+                Err(std::io::Error::other(format!(
+                    "Failed to start recording segment: {}",
+                    e
+                )))
             }
         }
     }
@@ -692,14 +833,14 @@ impl VideoRecordService {
 
         // macOS avfoundation 格式的正则表达式
         // 格式: [AVFoundation indev @ 0x...] [info] [0] 设备名称
-        let device_regex = match Regex::new(r#"\[AVFoundation indev @ [^\]]+\]\s+\[info\]\s+\[(\d+)\]\s+(.+)"#)
-        {
-            Ok(regex) => regex,
-            Err(e) => {
-                log::error!("[get_device_info_list] Failed to create regex: {}", e);
-                return device_info_list;
-            }
-        };
+        let device_regex =
+            match Regex::new(r#"\[AVFoundation indev @ [^\]]+\]\s+\[info\]\s+\[(\d+)\]\s+(.+)"#) {
+                Ok(regex) => regex,
+                Err(e) => {
+                    log::error!("[get_device_info_list] Failed to create regex: {}", e);
+                    return device_info_list;
+                }
+            };
 
         // 检测当前正在解析的设备类型
         let mut current_device_type = DeviceType::Video;
@@ -800,21 +941,15 @@ impl VideoRecordService {
             };
 
             for line in output_iter {
-                match line {
-                    FfmpegEvent::Log(_, line) => {
-                        // 使用正则表达式解析音频设备
-                        if let Some(captures) = device_regex.captures(&line) {
-                            if let Some(device_name) = captures.get(1) {
-                                let name = device_name.as_str().to_string();
-                                device_names.push(name.clone());
-                                println!(
-                                    "[get_microphone_device_names] Found audio device: {}",
-                                    name
-                                );
-                            }
-                        }
+                if let FfmpegEvent::Log(_, line) = line {
+                    // 使用正则表达式解析音频设备
+                    if let Some(captures) = device_regex.captures(&line)
+                        && let Some(device_name) = captures.get(1)
+                    {
+                        let name = device_name.as_str().to_string();
+                        device_names.push(name.clone());
+                        println!("[get_microphone_device_names] Found audio device: {}", name);
                     }
-                    _ => {}
                 }
             }
 
@@ -843,18 +978,16 @@ impl VideoRecordService {
     pub fn get_microphone_device_index(&self, device_name: &str) -> Option<u32> {
         // 使用正则表达式从设备名称中提取索引
         // 设备名称格式: [0] 设备名称
-        if let Ok(device_index_regex) = Regex::new(r#"\[(\d+)\]\s+(.+)"#) {
-            if let Some(captures) = device_index_regex.captures(device_name) {
-                if let Some(index_match) = captures.get(1) {
-                    if let Ok(device_index) = index_match.as_str().parse::<u32>() {
-                        println!(
-                            "[get_microphone_device_index] Found device index {} for device: {}",
-                            device_index, device_name
-                        );
-                        return Some(device_index);
-                    }
-                }
-            }
+        if let Ok(device_index_regex) = Regex::new(r#"\[(\d+)\]\s+(.+)"#)
+            && let Some(captures) = device_index_regex.captures(device_name)
+            && let Some(index_match) = captures.get(1)
+            && let Ok(device_index) = index_match.as_str().parse::<u32>()
+        {
+            println!(
+                "[get_microphone_device_index] Found device index {} for device: {}",
+                device_index, device_name
+            );
+            return Some(device_index);
         }
 
         println!(
@@ -867,6 +1000,16 @@ impl VideoRecordService {
     pub fn kill(&mut self) -> Result<()> {
         if let Some(mut child) = self.child.take() {
             let _ = child.kill();
+        }
+
+        #[cfg(target_os = "macos")]
+        if let Some(mut capture) = self.system_audio_capture.take() {
+            capture.stop();
+        }
+
+        #[cfg(target_os = "windows")]
+        if let Some(mut capture) = self.wasapi_capture.take() {
+            capture.stop();
         }
 
         self.cleanup();
@@ -893,6 +1036,16 @@ impl VideoRecordService {
         println!("[FFmpeg] Stopping and merging segments");
 
         // 停止当前录制
+        #[cfg(target_os = "macos")]
+        if let Some(mut capture) = self.system_audio_capture.take() {
+            capture.stop();
+        }
+
+        #[cfg(target_os = "windows")]
+        if let Some(mut capture) = self.wasapi_capture.take() {
+            capture.stop();
+        }
+
         if let Some(mut child) = self.child.take() {
             let _ = child.quit();
             let _ = child.wait();
@@ -903,10 +1056,10 @@ impl VideoRecordService {
         if self.segments.len() == 1 {
             if let Err(e) = std::fs::rename(&self.segments[0], &final_filename) {
                 println!("Failed to rename single segment: {}", e);
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to rename segment: {}", e),
-                ));
+                return Err(std::io::Error::other(format!(
+                    "Failed to rename segment: {}",
+                    e
+                )));
             }
         } else if self.segments.len() > 1 {
             // 多个片段需要合并
@@ -940,10 +1093,10 @@ impl VideoRecordService {
         }
 
         if let Err(e) = std::fs::write(&list_filename, list_content) {
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("Failed to create segment list: {}", e),
-            ));
+            return Err(std::io::Error::other(format!(
+                "Failed to create segment list: {}",
+                e
+            )));
         }
 
         // 使用ffmpeg合并片段
@@ -981,10 +1134,10 @@ impl VideoRecordService {
             }
             Err(e) => {
                 println!("Failed to merge segments: {}", e);
-                Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to merge segments: {}", e),
-                ))
+                Err(std::io::Error::other(format!(
+                    "Failed to merge segments: {}",
+                    e
+                )))
             }
         }
     }
@@ -1021,13 +1174,13 @@ impl VideoRecordService {
         );
 
         // 确保输出文件的目录存在
-        if let Some(parent_dir) = std::path::Path::new(&output_filename).parent() {
-            if let Err(e) = std::fs::create_dir_all(parent_dir) {
-                return Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to create output directory: {}", e),
-                ));
-            }
+        if let Some(parent_dir) = std::path::Path::new(&output_filename).parent()
+            && let Err(e) = std::fs::create_dir_all(parent_dir)
+        {
+            return Err(std::io::Error::other(format!(
+                "Failed to create output directory: {}",
+                e
+            )));
         }
 
         let video_width = self.record_video_size.as_ref().unwrap().0;
@@ -1039,7 +1192,7 @@ impl VideoRecordService {
         let scale_filter = if target_width != video_width || target_height != video_height {
             format!("scale={}:{}:flags=lanczos", target_width, target_height)
         } else {
-            format!("scale=-1:-1:flags=lanczos")
+            "scale=-1:-1:flags=lanczos".to_string()
         };
 
         // 构建FFmpeg命令进行MP4到GIF/APNG的转换
@@ -1137,18 +1290,18 @@ impl VideoRecordService {
 
                     Ok(output_filename)
                 } else {
-                    Err(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        format!("{} conversion failed - output file not found", format_name),
-                    ))
+                    Err(std::io::Error::other(format!(
+                        "{} conversion failed - output file not found",
+                        format_name
+                    )))
                 }
             }
             Err(e) => {
                 println!("Failed to convert MP4 to {}: {}", format_name, e);
-                Err(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("Failed to convert MP4 to {}: {}", format_name, e),
-                ))
+                Err(std::io::Error::other(format!(
+                    "Failed to convert MP4 to {}: {}",
+                    format_name, e
+                )))
             }
         }
     }
@@ -1169,6 +1322,16 @@ impl VideoRecordService {
         }
 
         println!("[FFmpeg] Pausing recording - stopping current segment");
+
+        #[cfg(target_os = "macos")]
+        if let Some(mut capture) = self.system_audio_capture.take() {
+            capture.stop();
+        }
+
+        #[cfg(target_os = "windows")]
+        if let Some(mut capture) = self.wasapi_capture.take() {
+            capture.stop();
+        }
 
         // 停止当前片段的录制
         if let Some(mut child) = self.child.take() {

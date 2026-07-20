@@ -1,15 +1,17 @@
 export const about = {
-	"about.title": "Snow Shot",
+	"about.title": "Snow Shot Revived",
 	"about.subtitle": "簡單優雅的工具軟體 ❄️——第三方分支",
 	"about.version": "版本",
 	"about.author": "原作者: mg-chao",
-	"about.forkAuthor": "第三方分支作者: Utility Software Collection",
+	"about.upstreamAuthor": "上游作者: xiaofeiTM233",
+	"about.forkAuthor": "目前維護者: Utility Software Collection",
 	"about.branchInfo.title": "分支資訊",
 	"about.branchInfo.currentVersion": "目前版本",
 	"about.branchInfo.latestVersion": "最新版本",
 	"about.branchInfo.latestVersion.empty": "暫未取得",
 	"about.branchInfo.originalRepository": "原始倉庫",
-	"about.branchInfo.forkRepository": "第三方分支倉庫",
+	"about.branchInfo.upstreamRepository": "上游倉庫",
+	"about.branchInfo.forkRepository": "目前倉庫",
 	"about.forkActions.title": "第三方分支入口",
 	"about.forkActions.repository": "Fork 倉庫",
 	"about.forkActions.issue": "Issue 回饋",
@@ -21,12 +23,6 @@ export const about = {
 	"about.forkActions.releaseCheck.open": "開啟 Release",
 	"about.forkActions.releaseCheck.failed":
 		"暫時無法檢查最新 Release，可直接開啟 Release 頁面查看",
-	"about.forkChangelog.title": "第三方分支更新日誌",
-	"about.forkChangelog.item.redact": "新增獨立打碼工具，保留原有濾鏡工具。",
-	"about.forkChangelog.item.toolbarPreview":
-		"新增工具列預覽設定頁，集中調整截圖與貼圖繪製工具列。",
-	"about.forkChangelog.item.about":
-		"關於頁補充第三方分支資訊、倉庫入口與 Release 檢查入口。",
 	"about.license.title": "📄 開源授權",
 	"about.license.description": "本專案採用雙重授權模式：",
 	"about.license.nonCommercial": "非商用情境：",

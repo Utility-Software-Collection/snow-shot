@@ -534,10 +534,7 @@ pub fn restart_with_admin() -> Result<(), String> {
     unsafe {
         // 使用 cmd.exe 延迟启动新进程，确保旧进程有足够时间退出并释放单实例锁
         // ping 127.0.0.1 -n 2 大约延迟 1 秒
-        let cmd_args = format!(
-            "/C ping 127.0.0.1 -n 2 > nul && \"{}\"",
-            exe_path
-        );
+        let cmd_args = format!("/C ping 127.0.0.1 -n 2 > nul && \"{}\"", exe_path);
 
         let mut sei: SHELLEXECUTEINFOW = std::mem::zeroed();
         sei.cbSize = std::mem::size_of::<SHELLEXECUTEINFOW>() as u32;
@@ -548,7 +545,7 @@ pub fn restart_with_admin() -> Result<(), String> {
         sei.lpVerb = PCWSTR::from_raw(verb.as_ptr());
         sei.lpFile = PCWSTR::from_raw(file.as_ptr());
         sei.lpParameters = PCWSTR::from_raw(args.as_ptr());
-        sei.nShow = windows::Win32::UI::WindowsAndMessaging::SW_HIDE.0 as i32;
+        sei.nShow = windows::Win32::UI::WindowsAndMessaging::SW_HIDE.0;
 
         let result = ShellExecuteExW(&mut sei);
         if result.is_err() {
@@ -571,10 +568,7 @@ pub fn restart() -> Result<(), String> {
     let current_exe = match env::current_exe() {
         Ok(current_exe) => current_exe,
         Err(e) => {
-            return Err(format!(
-                "[restart] env::current_exe failed: {:?}",
-                e
-            ));
+            return Err(format!("[restart] env::current_exe failed: {:?}", e));
         }
     };
     let exe_path = current_exe.to_string_lossy();
@@ -582,10 +576,7 @@ pub fn restart() -> Result<(), String> {
     unsafe {
         // 使用 cmd.exe 延迟启动新进程，确保旧进程有足够时间退出并释放单实例锁
         // ping 127.0.0.1 -n 2 大约延迟 1 秒
-        let cmd_args = format!(
-            "/C ping 127.0.0.1 -n 2 > nul && \"{}\"",
-            exe_path
-        );
+        let cmd_args = format!("/C ping 127.0.0.1 -n 2 > nul && \"{}\"", exe_path);
 
         let mut sei: SHELLEXECUTEINFOW = std::mem::zeroed();
         sei.cbSize = std::mem::size_of::<SHELLEXECUTEINFOW>() as u32;
@@ -596,7 +587,7 @@ pub fn restart() -> Result<(), String> {
         sei.lpVerb = PCWSTR::from_raw(verb.as_ptr());
         sei.lpFile = PCWSTR::from_raw(file.as_ptr());
         sei.lpParameters = PCWSTR::from_raw(args.as_ptr());
-        sei.nShow = windows::Win32::UI::WindowsAndMessaging::SW_HIDE.0 as i32;
+        sei.nShow = windows::Win32::UI::WindowsAndMessaging::SW_HIDE.0;
 
         let result = ShellExecuteExW(&mut sei);
         if result.is_err() {

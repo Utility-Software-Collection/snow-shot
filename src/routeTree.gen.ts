@@ -224,6 +224,7 @@ const LayoutPersonalizationAppearanceRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof LayoutIndexLazyRoute
   '/about': typeof LayoutAboutLazyRoute
   '/draw': typeof NoLayoutDrawLazyRoute
   '/fixedContent': typeof NoLayoutFixedContentLazyRoute
@@ -232,7 +233,6 @@ export interface FileRoutesByFullPath {
   '/idle': typeof NoLayoutIdleLazyRoute
   '/videoRecord': typeof NoLayoutVideoRecordLazyRoute
   '/videoRecordToolbar': typeof NoLayoutVideoRecordToolbarLazyRoute
-  '/': typeof LayoutIndexLazyRoute
   '/personalization/appearance': typeof LayoutPersonalizationAppearanceRoute
   '/personalization/plugins': typeof LayoutPersonalizationPluginsLazyRoute
   '/settings/functionSettings': typeof LayoutSettingsFunctionSettingsLazyRoute
@@ -245,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/tools/translation': typeof LayoutToolsTranslationLazyRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof LayoutIndexLazyRoute
   '/about': typeof LayoutAboutLazyRoute
   '/draw': typeof NoLayoutDrawLazyRoute
   '/fixedContent': typeof NoLayoutFixedContentLazyRoute
@@ -253,7 +254,6 @@ export interface FileRoutesByTo {
   '/idle': typeof NoLayoutIdleLazyRoute
   '/videoRecord': typeof NoLayoutVideoRecordLazyRoute
   '/videoRecordToolbar': typeof NoLayoutVideoRecordToolbarLazyRoute
-  '/': typeof LayoutIndexLazyRoute
   '/personalization/appearance': typeof LayoutPersonalizationAppearanceRoute
   '/personalization/plugins': typeof LayoutPersonalizationPluginsLazyRoute
   '/settings/functionSettings': typeof LayoutSettingsFunctionSettingsLazyRoute
@@ -292,6 +292,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/about'
     | '/draw'
     | '/fixedContent'
@@ -300,7 +301,6 @@ export interface FileRouteTypes {
     | '/idle'
     | '/videoRecord'
     | '/videoRecordToolbar'
-    | '/'
     | '/personalization/appearance'
     | '/personalization/plugins'
     | '/settings/functionSettings'
@@ -313,6 +313,7 @@ export interface FileRouteTypes {
     | '/tools/translation'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/about'
     | '/draw'
     | '/fixedContent'
@@ -321,7 +322,6 @@ export interface FileRouteTypes {
     | '/idle'
     | '/videoRecord'
     | '/videoRecordToolbar'
-    | '/'
     | '/personalization/appearance'
     | '/personalization/plugins'
     | '/settings/functionSettings'
@@ -367,14 +367,14 @@ declare module '@tanstack/react-router' {
     '/_noLayout': {
       id: '/_noLayout'
       path: ''
-      fullPath: ''
+      fullPath: '/'
       preLoaderRoute: typeof NoLayoutRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_layout': {
       id: '/_layout'
       path: ''
-      fullPath: ''
+      fullPath: '/'
       preLoaderRoute: typeof LayoutRouteRouteImport
       parentRoute: typeof rootRouteImport
     }

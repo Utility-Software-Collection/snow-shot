@@ -1,18 +1,18 @@
-import { useEffect, useState } from "react";
+import { type DependencyList, useEffect, useState } from "react";
 import {
 	type HotkeyCallback,
 	type Keys,
+	type Options,
 	useHotkeys,
 	useHotkeysContext,
 } from "react-hotkeys-hook";
-import type { OptionsOrDependencyArray } from "react-hotkeys-hook/packages/react-hotkeys-hook/dist/types";
 import { HotkeysScope } from "@/types/core/appHotKeys";
 
 export const useHotkeysApp = (
 	keys: Keys,
 	callback: HotkeyCallback,
-	options?: OptionsOrDependencyArray,
-	dependencies?: OptionsOrDependencyArray,
+	options?: Options | DependencyList,
+	dependencies?: DependencyList,
 ) => {
 	const { activeScopes } = useHotkeysContext();
 

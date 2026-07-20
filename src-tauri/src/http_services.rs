@@ -23,13 +23,15 @@ pub async fn upload_to_s3(request: tauri::ipc::Request<'_>) -> Result<String, St
         get_request_optional_string_header(&request, "x-content-type")?;
 
     snow_shot_tauri_commands_http_service::upload_to_s3(
-        endpoint,
-        region,
-        access_key_id,
-        secret_access_key,
-        bucket,
-        path_prefix,
-        force_path_style,
+        snow_shot_http_services::S3Config {
+            endpoint,
+            region,
+            access_key_id,
+            secret_access_key,
+            bucket,
+            path_prefix,
+            force_path_style,
+        },
         data,
         filename,
         content_type,

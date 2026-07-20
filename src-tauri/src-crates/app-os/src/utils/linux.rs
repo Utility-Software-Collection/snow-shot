@@ -52,7 +52,10 @@ pub fn restart() -> Result<(), String> {
             std::process::exit(0);
         }
         Err(e) => {
-            return Err(format!("[restart] Failed to spawn restart process: {:?}", e));
+            return Err(format!(
+                "[restart] Failed to spawn restart process: {:?}",
+                e
+            ));
         }
     }
 }

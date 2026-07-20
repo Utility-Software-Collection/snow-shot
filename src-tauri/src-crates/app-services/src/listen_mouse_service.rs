@@ -26,14 +26,20 @@ pub struct ListenMouseUpEvent {
     button: usize,
 }
 
+impl Default for ListenMouseService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ListenMouseService {
     pub fn new() -> Self {
-        return Self {
+        Self {
             _mouse_down_guard: Arc::new(Mutex::new(None)),
             _mouse_up_guard: Arc::new(Mutex::new(None)),
             window_label_set: Arc::new(Mutex::new(HashSet::new())),
             device_event_handler: Arc::new(Mutex::new(DeviceEventHandlerService::new())),
-        };
+        }
     }
 
     pub fn start(&mut self, app_handle: AppHandle, window: Window) -> Result<(), String> {
@@ -65,7 +71,7 @@ impl ListenMouseService {
                 move |button: &MouseButton| {
                     match mouse_down_app_handle.emit(
                             "listen-mouse-service:mouse-down",
-                        ListenMouseDownEvent { button: *button as usize },
+                        ListenMouseDownEvent { button: *button },
                     ) {
                         Ok(_) => {}
                         Err(_) => {
@@ -94,7 +100,7 @@ impl ListenMouseService {
                 move |button: &MouseButton| {
                     match mouse_up_app_handle.emit(
                         "listen-mouse-service:mouse-up",
-                        ListenMouseUpEvent { button: *button as usize },
+                        ListenMouseUpEvent { button: *button },
                     ) {
                         Ok(_) => {}
                         Err(_) => {

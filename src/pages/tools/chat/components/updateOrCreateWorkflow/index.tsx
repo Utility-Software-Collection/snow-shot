@@ -35,7 +35,7 @@ export const USER_INPUT_ENV_VARIABLE = "{{USER_INPUT}}";
 
 export const UpdateOrCreateWorkflow: React.FC<{
 	workflow?: ChatWorkflowConfig;
-	trigger?: React.ReactNode;
+	trigger?: React.ReactElement;
 	actionRef?: React.RefObject<UpdateOrCreateWorkflowActionType | undefined>;
 	onUpdateAction: () => void;
 }> = ({ workflow, trigger, actionRef, onUpdateAction }) => {

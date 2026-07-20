@@ -131,7 +131,7 @@ pub async fn read_image_from_clipboard(
         Err(_) => return Ok(Response::new(Vec::new())),
     };
 
-    return Ok(Response::new(image_data));
+    Ok(Response::new(image_data))
 }
 
 /// 创建全屏绘制窗口

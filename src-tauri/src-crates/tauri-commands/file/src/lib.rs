@@ -21,15 +21,11 @@ pub async fn save_file(request: tauri::ipc::Request<'_>) -> Result<(), String> {
         None => return Err(String::from("[save_file] Missing file path")),
     };
 
-    if let Some(parent_dir) = file_path.parent() {
-        if !parent_dir.exists() {
-            if let Err(e) = fs::create_dir_all(parent_dir).await {
-                return Err(format!(
-                    "[save_file] Failed to create directory: {}",
-                    e.to_string()
-                ));
-            }
-        }
+    if let Some(parent_dir) = file_path.parent()
+        && !parent_dir.exists()
+        && let Err(e) = fs::create_dir_all(parent_dir).await
+    {
+        return Err(format!("[save_file] Failed to create directory: {}", e));
     }
 
     let file_type: String = match request.headers().get("x-file-type") {
@@ -52,10 +48,7 @@ pub async fn save_file(request: tauri::ipc::Request<'_>) -> Result<(), String> {
 
         return match image.save_with_format(file_path, image::ImageFormat::Avif) {
             Ok(_) => Ok(()),
-            Err(e) => Err(format!(
-                "[save_file] Failed to save image to file: {}",
-                e.to_string()
-            )),
+            Err(e) => Err(format!("[save_file] Failed to save image to file: {}", e)),
         };
     } else if file_type == "image/jpeg-xl" {
         let image = match image::load_from_memory_with_format(
@@ -90,19 +83,13 @@ pub async fn save_file(request: tauri::ipc::Request<'_>) -> Result<(), String> {
         };
         return match fs::write(file_path, encoder_result).await {
             Ok(_) => Ok(()),
-            Err(e) => Err(format!(
-                "[save_file] Failed to save image to file: {}",
-                e.to_string()
-            )),
+            Err(e) => Err(format!("[save_file] Failed to save image to file: {}", e)),
         };
     }
 
     match fs::write(file_path, file_data).await {
         Ok(_) => Ok(()),
-        Err(e) => Err(format!(
-            "[save_file] Failed to save image to file: {}",
-            e.to_string()
-        )),
+        Err(e) => Err(format!("[save_file] Failed to save image to file: {}", e)),
     }
 }
 
@@ -120,42 +107,29 @@ pub async fn write_file(request: tauri::ipc::Request<'_>) -> Result<(), String> 
         None => return Err(String::from("[write_file] Missing file path")),
     };
 
-    if let Some(parent_dir) = file_path.parent() {
-        if !parent_dir.exists() {
-            if let Err(e) = fs::create_dir_all(parent_dir).await {
-                return Err(format!(
-                    "[write_file] Failed to create directory: {}",
-                    e.to_string()
-                ));
-            }
-        }
+    if let Some(parent_dir) = file_path.parent()
+        && !parent_dir.exists()
+        && let Err(e) = fs::create_dir_all(parent_dir).await
+    {
+        return Err(format!("[write_file] Failed to create directory: {}", e));
     }
 
     match fs::write(file_path, file_data).await {
         Ok(_) => Ok(()),
-        Err(e) => Err(format!(
-            "[write_file] Failed to save image to file: {}",
-            e.to_string()
-        )),
+        Err(e) => Err(format!("[write_file] Failed to save image to file: {}", e)),
     }
 }
 
 pub async fn copy_file(from: PathBuf, to: PathBuf) -> Result<(), String> {
     match fs::copy(from, to).await {
         Ok(_) => Ok(()),
-        Err(e) => Err(format!(
-            "[copy_file] Failed to copy file: {}",
-            e.to_string()
-        )),
+        Err(e) => Err(format!("[copy_file] Failed to copy file: {}", e)),
     }
 }
 
 pub async fn remove_file(file_path: PathBuf) -> Result<(), String> {
     match fs::remove_file(file_path).await {
         Ok(_) => Ok(()),
-        Err(e) => Err(format!(
-            "[remove_file] Failed to remove file: {}",
-            e.to_string()
-        )),
+        Err(e) => Err(format!("[remove_file] Failed to remove file: {}", e)),
     }
 }

@@ -6,4 +6,8 @@ pub mod listen_key_service;
 pub mod listen_mouse_service;
 pub mod ocr_service;
 pub mod resize_window_service;
+#[cfg(target_os = "macos")]
+pub mod screencapturekit_capture;
 pub mod video_record_service;
+#[cfg(target_os = "windows")]
+pub mod wasapi_capture;

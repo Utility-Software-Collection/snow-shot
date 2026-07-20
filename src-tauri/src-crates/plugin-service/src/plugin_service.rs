@@ -17,6 +17,12 @@ pub struct PluginService {
     app_handle: Arc<RwLock<Option<AppHandle>>>,
 }
 
+impl Default for PluginService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct PluginStatusResult {
     name: String,
@@ -130,8 +136,8 @@ impl PluginService {
 
     async fn create_plugin(&self, name: &str, file_list: Vec<PathBuf>) -> Plugin {
         Plugin::new(
-            &self.plugin_install_dir.read().await.as_path(),
-            &self.plugin_download_dir.read().await.as_path(),
+            self.plugin_install_dir.read().await.as_path(),
+            self.plugin_download_dir.read().await.as_path(),
             name.to_string(),
             file_list,
             self.version.read().await.clone(),

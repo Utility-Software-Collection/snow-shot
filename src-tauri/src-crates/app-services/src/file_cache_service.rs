@@ -20,6 +20,12 @@ const APP_CUSTOM_CONFIG_DIR_DATA_FILE_NAME: &str = "__custom_config_dir";
 #[cfg(target_os = "windows")]
 const APP_PORTABLE_DIR_DATA_FILE_NAME: &str = "__portable";
 
+impl Default for FileCacheService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FileCacheService {
     pub fn new() -> Self {
         Self {
@@ -31,10 +37,10 @@ impl FileCacheService {
     }
 
     pub fn is_portable_app(&self) -> bool {
-        if let Ok(is_portable) = self.is_portable.read() {
-            if let Some(is_portable) = is_portable.as_ref() {
-                return *is_portable;
-            }
+        if let Ok(is_portable) = self.is_portable.read()
+            && let Some(is_portable) = is_portable.as_ref()
+        {
+            return *is_portable;
         }
 
         let is_portable = self.get_app_portable_config_dir().is_some();
@@ -67,16 +73,13 @@ impl FileCacheService {
                 Err(_) => return None,
             };
 
-            let exe_dir_path = match exe_path.parent() {
-                Some(path) => path,
-                None => return None,
-            };
+            let exe_dir_path = exe_path.parent()?;
 
             let portable_config_file_path = exe_dir_path.join(APP_PORTABLE_DIR_DATA_FILE_NAME);
             if portable_config_file_path.exists() {
-                return Some(exe_dir_path.to_path_buf().join(APP_CONFIG_DIR_NAME));
+                Some(exe_dir_path.to_path_buf().join(APP_CONFIG_DIR_NAME))
             } else {
-                return None;
+                None
             }
         }
     }
@@ -135,16 +138,9 @@ impl FileCacheService {
             return Ok(path.clone());
         }
 
-        let local_config_dir = match self.get_app_custom_config_dir(app) {
-            Some(path) => {
-                if path.exists() {
-                    Some(path)
-                } else {
-                    None
-                }
-            }
-            None => None,
-        };
+        let local_config_dir = self
+            .get_app_custom_config_dir(app)
+            .filter(|path| path.exists());
 
         let path = match local_config_dir {
             Some(path) => path,
@@ -184,20 +180,18 @@ impl FileCacheService {
                 log::warn!(
                     "[TextFileCacheService] check dir exists failed: [{}] {}",
                     dir_path.display(),
-                    e.to_string()
+                    e
                 );
                 false
             }
         };
 
-        if !exists {
-            if let Err(e) = fs::create_dir_all(dir_path.clone()) {
-                return Err(format!(
-                    "[TextFileCacheService] create dir failed: [{}] {}",
-                    dir_path.display(),
-                    e.to_string()
-                ));
-            }
+        if !exists && let Err(e) = fs::create_dir_all(dir_path.clone()) {
+            return Err(format!(
+                "[TextFileCacheService] create dir failed: [{}] {}",
+                dir_path.display(),
+                e
+            ));
         }
 
         self.exists_path_cache.insert(dir_path);
@@ -217,7 +211,7 @@ impl FileCacheService {
                 log::error!(
                     "[TextFileCacheService] read failed: [{}] {}",
                     file_path.display(),
-                    e.to_string()
+                    e
                 );
 
                 "".to_string()
@@ -233,7 +227,7 @@ impl FileCacheService {
             log::error!(
                 "[TextFileCacheService] write file failed: [{}] {}",
                 file_path.display(),
-                e.to_string()
+                e
             );
         };
 

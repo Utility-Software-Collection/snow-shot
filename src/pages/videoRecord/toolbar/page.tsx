@@ -12,8 +12,9 @@ import {
 	type Window as AppWindow,
 	getCurrentWindow,
 } from "@tauri-apps/api/window";
+import * as dialog from "@tauri-apps/plugin-dialog";
 import { openPath } from "@tauri-apps/plugin-opener";
-import { Button, Flex, Spin, theme } from "antd";
+import { Button, Flex, Select, Spin, theme } from "antd";
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import {
@@ -27,6 +28,12 @@ import {
 import { useIntl } from "react-intl";
 import clipboard from "tauri-plugin-clipboard-api";
 import {
+	checkMicrophonePermission,
+	checkScreenRecordingPermission,
+	requestMicrophonePermission,
+	requestScreenRecordingPermission,
+} from "tauri-plugin-macos-permissions-api";
+import {
 	closeVideoRecordWindow,
 	getMonitorsBoundingBox,
 	type MonitorBoundingBox,
@@ -34,6 +41,7 @@ import {
 import { createDir } from "@/commands/file";
 import {
 	setExcludeFromCapture,
+	videoRecordGetMicrophoneDeviceNames,
 	videoRecordKill,
 	videoRecordPause,
 	videoRecordResume,
@@ -47,6 +55,7 @@ import {
 	ResumeRecordIcon,
 	StartRecordIcon,
 	StopRecordIcon,
+	SystemAudioIcon,
 } from "@/components/icons";
 import { PLUGIN_ID_FFMPEG } from "@/constants/pluginService";
 import {
@@ -71,7 +80,7 @@ import {
 	getVideoRecordSaveDirectory,
 } from "@/utils/file";
 import { appError } from "@/utils/log";
-import { getPlatformValue } from "@/utils/platform";
+import { getPlatform, getPlatformValue } from "@/utils/platform";
 import type { VideoRecordWindowInfo } from "@/utils/types";
 import { setWindowRect } from "@/utils/window";
 import { zIndexs } from "@/utils/zIndex";
@@ -109,6 +118,9 @@ const convertVideoMaxSizeToWidthAndHeight = (
 
 	return { width: videoMaxWidth, height: videoMaxHeight };
 };
+
+const microphoneDropdownHeight = 264;
+type MicrophoneDropdownPlacement = "bottomLeft" | "topLeft";
 
 export const VideoRecordToolbarPage: React.FC = () => {
 	const { token } = theme.useToken();
@@ -196,7 +208,12 @@ export const VideoRecordToolbarPage: React.FC = () => {
 			// 初始化两次，防止窗口位置不正确
 			await initWindowRect(appWindow, selectRect, monitorBounds);
 
-			await Promise.all([appWindow.show(), appWindow.setAlwaysOnTop(true)]);
+			// 热加载窗口可能继承上一个页面的鼠标穿透状态，工具栏必须恢复可交互。
+			await Promise.all([
+				appWindow.show(),
+				appWindow.setAlwaysOnTop(true),
+				appWindow.setIgnoreCursorEvents(false),
+			]);
 		},
 		[initWindowRect, videoRecordStateRef],
 	);
@@ -206,7 +223,20 @@ export const VideoRecordToolbarPage: React.FC = () => {
 	}, [intl]);
 
 	const [enableMicrophone, setEnableMicrophone] = useState(false);
-	// const [enableSystemAudio, setEnableSystemAudio] = useState(true);
+	const [microphoneDeviceName, setMicrophoneDeviceName] = useState("");
+	const [microphoneDeviceOptions, setMicrophoneDeviceOptions] = useState<
+		{ label: string; value: string }[]
+	>([]);
+	const [microphoneDevicesLoading, setMicrophoneDevicesLoading] =
+		useState(true);
+	const [microphoneDropdownOpen, setMicrophoneDropdownOpen] = useState(false);
+	const [microphoneDropdownPlacement, setMicrophoneDropdownPlacement] =
+		useState<MicrophoneDropdownPlacement>("bottomLeft");
+	const [enableSystemAudio, setEnableSystemAudio] = useState(false);
+	const recordingAudioEnabledRef = useRef({
+		enableMicrophone: false,
+		enableSystemAudio: false,
+	});
 	const durationRef = useRef(0);
 
 	const durationTimer = useRef<NodeJS.Timeout | null>(null);
@@ -259,9 +289,88 @@ export const VideoRecordToolbarPage: React.FC = () => {
 
 	const [getAppSettings] = useStateSubscriber(AppSettingsPublisher, undefined);
 	const { updateAppSettings } = useContext(AppSettingsActionContext);
+	const { isReadyStatus } = usePluginServiceContext();
+	const resizeWindowForMicrophoneDropdown = useCallback(async () => {
+		const selectRect = selectRectRef.current;
+		if (!selectRect) {
+			return "bottomLeft" as const;
+		}
+
+		const scaleFactor = window.devicePixelRatio;
+		const appWindow = getCurrentWindow();
+		const monitorBounds = await getMonitorsBoundingBox(selectRect, true);
+		const toolbarWidth = (toolbarRef.current?.clientWidth ?? 0) + 3 * 2;
+		const toolbarHeight = (toolbarRef.current?.clientHeight ?? 0) + 3 * 2;
+		const physicalWidth = Math.round(toolbarWidth * scaleFactor);
+		const physicalToolbarHeight = Math.round(toolbarHeight * scaleFactor);
+		const physicalDropdownHeight = Math.round(
+			microphoneDropdownHeight * scaleFactor,
+		);
+		const physicalHeight = physicalToolbarHeight + physicalDropdownHeight;
+		const centerX = (selectRect.max_x - selectRect.min_x - physicalWidth) / 2;
+		const targetX = Math.round(selectRect.min_x + centerX);
+		const targetBottomY = Math.round(selectRect.max_y + 24 * scaleFactor);
+		const targetTopY = Math.round(
+			selectRect.min_y - physicalToolbarHeight - 24 * scaleFactor,
+		);
+		const limitMaxY = getPlatformValue(
+			Math.round(
+				monitorBounds.rect.max_y - physicalHeight - (48 + 24) * scaleFactor,
+			),
+			Math.round(
+				monitorBounds.rect.max_y - physicalHeight - (72 + 32) * scaleFactor,
+			),
+		);
+		const limitMinY = Math.round(monitorBounds.rect.min_y);
+
+		const canOpenBelow = targetBottomY <= limitMaxY;
+		const canOpenAbove = targetTopY - physicalDropdownHeight >= limitMinY;
+		const placement: MicrophoneDropdownPlacement =
+			canOpenBelow || !canOpenAbove ? "bottomLeft" : "topLeft";
+		const targetY =
+			placement === "bottomLeft"
+				? Math.min(targetBottomY, limitMaxY)
+				: Math.max(targetTopY - physicalDropdownHeight, limitMinY);
+
+		await setWindowRect(appWindow, {
+			min_x: targetX,
+			min_y: targetY,
+			max_x: targetX + physicalWidth,
+			max_y: targetY + physicalHeight,
+		});
+
+		return placement;
+	}, []);
+	const onMicrophoneDropdownOpenChange = useCallback(
+		(open: boolean) => {
+			if (!open) {
+				setMicrophoneDropdownOpen(false);
+				setMicrophoneDropdownPlacement("bottomLeft");
+				if (selectRectRef.current) {
+					const selectRect = selectRectRef.current;
+					void getMonitorsBoundingBox(selectRect, true).then((monitorBounds) =>
+						initWindowRect(getCurrentWindow(), selectRect, monitorBounds),
+					);
+				}
+				return;
+			}
+
+			void resizeWindowForMicrophoneDropdown().then((placement) => {
+				setMicrophoneDropdownPlacement(placement);
+				setMicrophoneDropdownOpen(true);
+			});
+		},
+		[initWindowRect, resizeWindowForMicrophoneDropdown],
+	);
 	useAppSettingsLoad(
 		useCallback((appSettings: AppSettingsData) => {
 			setEnableMicrophone(appSettings[AppSettingsGroup.Cache].enableMicrophone);
+			setMicrophoneDeviceName(
+				appSettings[AppSettingsGroup.FunctionVideoRecord].microphoneDeviceName,
+			);
+			setEnableSystemAudio(
+				appSettings[AppSettingsGroup.Cache].enableSystemAudio,
+			);
 			setSettingLoading(false);
 
 			setExcludeFromCapture(
@@ -271,6 +380,49 @@ export const VideoRecordToolbarPage: React.FC = () => {
 		}, []),
 		true,
 	);
+
+	useEffect(() => {
+		if (!isReadyStatus?.(PLUGIN_ID_FFMPEG)) {
+			return;
+		}
+
+		let active = true;
+		setMicrophoneDevicesLoading(true);
+		videoRecordGetMicrophoneDeviceNames()
+			.then((deviceNames) => {
+				if (!active) {
+					return;
+				}
+
+				setMicrophoneDeviceOptions([
+					{
+						label: intl.formatMessage({
+							id: "videoRecord.microphoneDefault",
+						}),
+						value: "",
+					},
+					...deviceNames.map((deviceName) => ({
+						label: deviceName,
+						value: deviceName,
+					})),
+				]);
+			})
+			.catch((error) => {
+				appError("[loadMicrophoneDevices] error", error);
+				if (active) {
+					setMicrophoneDeviceOptions([]);
+				}
+			})
+			.finally(() => {
+				if (active) {
+					setMicrophoneDevicesLoading(false);
+				}
+			});
+
+		return () => {
+			active = false;
+		};
+	}, [intl, isReadyStatus]);
 
 	const stopRecord = useCallback(
 		async (convertToGif: boolean): Promise<string | null | undefined> => {
@@ -296,6 +448,10 @@ export const VideoRecordToolbarPage: React.FC = () => {
 				);
 
 				setVideoRecordState(VideoRecordState.Idle);
+				recordingAudioEnabledRef.current = {
+					enableMicrophone: false,
+					enableSystemAudio: false,
+				};
 
 				stopDurationTimer();
 
@@ -327,70 +483,210 @@ export const VideoRecordToolbarPage: React.FC = () => {
 		e.preventDefault();
 	}, []);
 
+	const promptAudioReminder = useCallback(
+		async (type: "record" | "gif") => {
+			const appSettings = getAppSettings();
+			if (appSettings[AppSettingsGroup.Cache].videoRecordAudioTipDisabled) {
+				return true;
+			}
+
+			try {
+				const continueRecording = await dialog.ask(
+					intl.formatMessage({
+						id:
+							type === "record"
+								? "videoRecord.audioReminder"
+								: "videoRecord.gifReminder",
+					}),
+					{
+						title: intl.formatMessage({
+							id:
+								type === "record"
+									? "videoRecord.audioReminderTitle"
+									: "videoRecord.gifReminderTitle",
+						}),
+						kind: "warning",
+						okLabel: intl.formatMessage({ id: "videoRecord.continue" }),
+						cancelLabel: intl.formatMessage({
+							id: "videoRecord.doNotRemindAgain",
+						}),
+					},
+				);
+
+				if (!continueRecording) {
+					updateAppSettings(
+						AppSettingsGroup.Cache,
+						{ videoRecordAudioTipDisabled: true },
+						false,
+						true,
+						false,
+						true,
+						false,
+					);
+				}
+
+				return true;
+			} catch (error) {
+				appError("[promptAudioReminder] error", error);
+				return true;
+			}
+		},
+		[getAppSettings, intl, updateAppSettings],
+	);
+
+	const ensureMacOSAudioPermission = useCallback(
+		async (type: "microphone" | "systemAudio") => {
+			if (getPlatform() !== "macos") {
+				return true;
+			}
+
+			const isMicrophone = type === "microphone";
+			const hasPermission = isMicrophone
+				? await checkMicrophonePermission()
+				: await checkScreenRecordingPermission();
+			if (hasPermission) {
+				return true;
+			}
+
+			if (isMicrophone) {
+				await requestMicrophonePermission();
+			} else {
+				await requestScreenRecordingPermission();
+			}
+
+			const permissionGranted = isMicrophone
+				? await checkMicrophonePermission()
+				: await checkScreenRecordingPermission();
+			if (permissionGranted) {
+				return true;
+			}
+
+			await dialog.message(
+				intl.formatMessage({ id: "videoRecord.macosAudioPermission" }),
+				{
+					title: intl.formatMessage({
+						id: "videoRecord.macosAudioPermissionTitle",
+					}),
+					kind: "warning",
+				},
+			);
+			return false;
+		},
+		[intl],
+	);
+
 	const startRecord = useCallback(async () => {
+		const appSettings = getAppSettings();
+		const audioTipDisabled =
+			appSettings[AppSettingsGroup.Cache].videoRecordAudioTipDisabled;
+		const hasAudio = enableMicrophone || enableSystemAudio;
+		if (!audioTipDisabled && !hasAudio) {
+			const shouldContinue = await promptAudioReminder("record");
+
+			if (!shouldContinue) {
+				return;
+			}
+		}
+
+		if (enableMicrophone && !(await ensureMacOSAudioPermission("microphone"))) {
+			return;
+		}
+		if (
+			enableSystemAudio &&
+			!(await ensureMacOSAudioPermission("systemAudio"))
+		) {
+			return;
+		}
+
 		setStartRecordLoading(true);
 
-		const appSettings = getAppSettings();
+		try {
+			const { width: videoMaxWidth, height: videoMaxHeight } =
+				convertVideoMaxSizeToWidthAndHeight(
+					appSettings[AppSettingsGroup.FunctionVideoRecord].videoMaxSize,
+				);
 
-		const { width: videoMaxWidth, height: videoMaxHeight } =
-			convertVideoMaxSizeToWidthAndHeight(
-				appSettings[AppSettingsGroup.FunctionVideoRecord].videoMaxSize,
+			await videoRecordStart(
+				selectRectRef.current?.min_x ?? 0,
+				selectRectRef.current?.min_y ?? 0,
+				selectRectRef.current?.max_x ?? 0,
+				selectRectRef.current?.max_y ?? 0,
+				await joinPath(
+					await getVideoRecordSaveDirectory(appSettings),
+					generateImageFileName(
+						appSettings[AppSettingsGroup.FunctionOutput]
+							.videoRecordFileNameFormat,
+					),
+				),
+				VideoFormat.Mp4,
+				appSettings[AppSettingsGroup.FunctionVideoRecord].frameRate,
+				enableMicrophone,
+				enableSystemAudio,
+				appSettings[AppSettingsGroup.FunctionVideoRecord].microphoneDeviceName,
+				appSettings[AppSettingsGroup.FunctionVideoRecord].hwaccel,
+				appSettings[AppSettingsGroup.FunctionVideoRecord].encoder,
+				appSettings[AppSettingsGroup.FunctionVideoRecord].encoderPreset,
+				videoMaxWidth,
+				videoMaxHeight,
 			);
 
-		videoRecordStart(
-			selectRectRef.current?.min_x ?? 0,
-			selectRectRef.current?.min_y ?? 0,
-			selectRectRef.current?.max_x ?? 0,
-			selectRectRef.current?.max_y ?? 0,
-			await joinPath(
-				await getVideoRecordSaveDirectory(appSettings),
-				generateImageFileName(
-					appSettings[AppSettingsGroup.FunctionOutput]
-						.videoRecordFileNameFormat,
-				),
-			),
-			VideoFormat.Mp4,
-			appSettings[AppSettingsGroup.FunctionVideoRecord].frameRate,
-			enableMicrophone,
-			false,
-			appSettings[AppSettingsGroup.FunctionVideoRecord].microphoneDeviceName,
-			appSettings[AppSettingsGroup.FunctionVideoRecord].hwaccel,
-			appSettings[AppSettingsGroup.FunctionVideoRecord].encoder,
-			appSettings[AppSettingsGroup.FunctionVideoRecord].encoderPreset,
-			videoMaxWidth,
-			videoMaxHeight,
-		)
-			.then(() => {
-				setVideoRecordState(VideoRecordState.Recording);
+			recordingAudioEnabledRef.current = {
+				enableMicrophone,
+				enableSystemAudio,
+			};
+			setVideoRecordState(VideoRecordState.Recording);
 
-				stopDurationTimer();
-
-				durationRef.current = 0;
-				updateDurationFormat();
-
-				startDurationTimer();
-			})
-			.finally(() => {
-				setStartRecordLoading(false);
-			});
+			stopDurationTimer();
+			durationRef.current = 0;
+			updateDurationFormat();
+			startDurationTimer();
+		} catch (error) {
+			appError("[VideoRecordToolbarPage] startRecord error", error);
+			const errorDetail =
+				error instanceof Error ? error.message : String(error);
+			await dialog.message(
+				`${intl.formatMessage({ id: "videoRecord.startRecordError" })}\n\n${errorDetail}`,
+				{
+					title: intl.formatMessage({ id: "videoRecord.startRecord" }),
+					kind: "error",
+				},
+			);
+		} finally {
+			setStartRecordLoading(false);
+		}
 	}, [
 		setVideoRecordState,
 		enableMicrophone,
+		enableSystemAudio,
 		getAppSettings,
+		ensureMacOSAudioPermission,
+		intl,
+		promptAudioReminder,
+		startDurationTimer,
 		stopDurationTimer,
 		updateDurationFormat,
-		startDurationTimer,
 	]);
 
 	const copyVideo = useCallback(
 		async (convertToGif: boolean) => {
+			if (
+				convertToGif &&
+				(recordingAudioEnabledRef.current.enableMicrophone ||
+					recordingAudioEnabledRef.current.enableSystemAudio)
+			) {
+				const shouldContinue = await promptAudioReminder("gif");
+				if (!shouldContinue) {
+					return;
+				}
+			}
+
 			stopRecord(convertToGif).then((outputFile) => {
 				if (outputFile) {
 					clipboard.writeFiles([outputFile]);
 				}
 			});
 		},
-		[stopRecord],
+		[promptAudioReminder, stopRecord],
 	);
 
 	useEffect(() => {
@@ -445,7 +741,6 @@ export const VideoRecordToolbarPage: React.FC = () => {
 		};
 	}, [addListener, init, removeListener]);
 
-	const { isReadyStatus } = usePluginServiceContext();
 	useEffect(() => {
 		if (!isReadyStatus) {
 			return;
@@ -458,7 +753,11 @@ export const VideoRecordToolbarPage: React.FC = () => {
 
 	return (
 		<div
-			className="video-record-toolbar-container"
+			className={`video-record-toolbar-container ${
+				microphoneDropdownOpen && microphoneDropdownPlacement === "topLeft"
+					? "microphone-dropdown-top"
+					: ""
+			}`}
 			onContextMenu={onContextMenu}
 		>
 			<div data-tauri-drag-region className="toolbar-drag-region before" />
@@ -577,9 +876,11 @@ export const VideoRecordToolbarPage: React.FC = () => {
 
 						<Button
 							onClick={() => {
+								const nextValue = !enableMicrophone;
+								setEnableMicrophone(nextValue);
 								updateAppSettings(
 									AppSettingsGroup.Cache,
-									{ enableMicrophone: !enableMicrophone },
+									{ enableMicrophone: nextValue },
 									true,
 									true,
 									false,
@@ -599,21 +900,64 @@ export const VideoRecordToolbarPage: React.FC = () => {
 							key="microphone"
 						/>
 
-						{/* <Button
-                        onClick={() => {
-                            setEnableSystemAudio((prev) => !prev);
-                        }}
-                        icon={
-                            <SystemAudioIcon
-                                style={{
-                                    color: getButtonIconColorByState(enableSystemAudio, token),
-                                }}
-                            />
-                        }
-                        title={intl.formatMessage({ id: 'videoRecord.systemAudio' })}
-                        type={'text'}
-                        key="system-audio"
-                    /> */}
+						<Select
+							size="small"
+							value={microphoneDeviceName}
+							options={microphoneDeviceOptions}
+							loading={microphoneDevicesLoading}
+							open={microphoneDropdownOpen}
+							placement={microphoneDropdownPlacement}
+							listHeight={microphoneDropdownHeight - 8}
+							popupMatchSelectWidth={false}
+							popupStyle={{ minWidth: 280 }}
+							disabled={videoRecordState !== VideoRecordState.Idle}
+							onOpenChange={onMicrophoneDropdownOpenChange}
+							onChange={(value) => {
+								setMicrophoneDeviceName(value);
+								updateAppSettings(
+									AppSettingsGroup.FunctionVideoRecord,
+									{ microphoneDeviceName: value },
+									true,
+									true,
+									false,
+									true,
+									false,
+								);
+							}}
+							style={{ width: 160 }}
+							aria-label={intl.formatMessage({
+								id: "videoRecord.microphoneDevice",
+							})}
+							placeholder={intl.formatMessage({
+								id: "videoRecord.microphoneDevice",
+							})}
+						/>
+
+						<Button
+							onClick={() => {
+								const nextValue = !enableSystemAudio;
+								setEnableSystemAudio(nextValue);
+								updateAppSettings(
+									AppSettingsGroup.Cache,
+									{ enableSystemAudio: nextValue },
+									true,
+									true,
+									false,
+									true,
+									false,
+								);
+							}}
+							icon={
+								<SystemAudioIcon
+									style={{
+										color: getButtonIconColorByState(enableSystemAudio, token),
+									}}
+								/>
+							}
+							title={intl.formatMessage({ id: "videoRecord.systemAudio" })}
+							type={"text"}
+							key="system-audio"
+						/>
 
 						<div className="video-record-toolbar-splitter" />
 
@@ -701,12 +1045,16 @@ export const VideoRecordToolbarPage: React.FC = () => {
 			</Spin>
 
 			<style jsx>{`
-                .video-record-toolbar-container {
-                    position: fixed;
-                    z-index: ${zIndexs.VideoRecord_Toolbar};
-                    padding: 3px;
-                    user-select: none;
-                }
+				.video-record-toolbar-container {
+					position: fixed;
+					z-index: ${zIndexs.VideoRecord_Toolbar};
+					padding: 3px;
+					user-select: none;
+				}
+
+				.video-record-toolbar-container.microphone-dropdown-top {
+					padding-top: ${microphoneDropdownHeight + 3}px;
+				}
 
                 .toolbar-drag-region {
                     position: absolute;

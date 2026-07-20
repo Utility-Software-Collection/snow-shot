@@ -34,26 +34,15 @@ fn get_sdr_white_level_for_adapter(
     if unsafe { DisplayConfigGetDeviceInfo(&mut sdr_white_level_info.header) } == 0 {
         Ok(sdr_white_level_info.SDRWhiteLevel)
     } else {
-        Err(format!(
-            "[get_sdr_white_level_for_adapter] Failed to get SDR white level"
-        ))
+        Err("[get_sdr_white_level_for_adapter] Failed to get SDR white level".to_string())
     }
 }
 
 /// SDR 显示器信息结构体
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct MonitorHdrInfo {
     pub sdr_white_level: u32,
     pub hdr_enabled: bool,
-}
-
-impl Default for MonitorHdrInfo {
-    fn default() -> Self {
-        Self {
-            sdr_white_level: 0,
-            hdr_enabled: false,
-        }
-    }
 }
 
 /// 获取显示器信息
@@ -88,9 +77,7 @@ pub fn get_all_monitors_sdr_info() -> Result<HashMap<String, MonitorHdrInfo>, St
 
     if number_of_paths == 0 {
         HDR_INFO_DISABLED.store(true, Ordering::Relaxed);
-        return Err(format!(
-            "[get_all_monitors_sdr_info] No display paths found"
-        ));
+        return Err("[get_all_monitors_sdr_info] No display paths found".to_string());
     }
 
     // 获取显示配置路径和模式
@@ -150,9 +137,9 @@ pub fn get_all_monitors_sdr_info() -> Result<HashMap<String, MonitorHdrInfo>, St
             }
         } else {
             HDR_INFO_DISABLED.store(true, Ordering::Relaxed);
-            return Err(format!(
-                "[get_all_monitors_sdr_info] Failed to DisplayConfigGetDeviceInfo"
-            ));
+            return Err(
+                "[get_all_monitors_sdr_info] Failed to DisplayConfigGetDeviceInfo".to_string(),
+            );
         };
 
         // 获取高级颜色信息
@@ -172,19 +159,16 @@ pub fn get_all_monitors_sdr_info() -> Result<HashMap<String, MonitorHdrInfo>, St
         let hdr_enabled =
             if unsafe { DisplayConfigGetDeviceInfo(&mut advanced_color_info.header) } == 0 {
                 let value = unsafe { advanced_color_info.Anonymous.value };
-                let hdr_enabled = (value & 0x2) != 0;
 
-                hdr_enabled
+                (value & 0x2) != 0
             } else {
                 false
             };
 
         // 获取 SDR 白电平
         let sdr_white_level =
-            match get_sdr_white_level_for_adapter(path.targetInfo.adapterId, path.targetInfo.id) {
-                Ok(level) => level,
-                Err(_) => 1000, // 默认 SDR 白电平
-            };
+            get_sdr_white_level_for_adapter(path.targetInfo.adapterId, path.targetInfo.id)
+                .unwrap_or(1000);
 
         result.insert(
             device_name,

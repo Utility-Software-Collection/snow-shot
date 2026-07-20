@@ -16,7 +16,11 @@ import { defaultWatermarkProps } from "@/pages/draw/components/drawToolbar/compo
 import type { CaptureBoundingBoxInfo } from "@/pages/draw/extra";
 import type { ImageSharedBufferData } from "@/pages/draw/tools";
 import type { FixedContentProcessImageConfig } from "@/pages/fixedContent/components/fixedContentCore";
-import { AppSettingsGroup, AppSettingsRenderEngine } from "@/types/appSettings";
+import {
+	type AppSettingsData,
+	AppSettingsGroup,
+	AppSettingsRenderEngine,
+} from "@/types/appSettings";
 import type { ElementRect, ImageBuffer } from "@/types/commands/screenshot";
 import type { CaptureHistoryItem } from "@/utils/appStore";
 import { getCaptureHistoryImageAbsPath } from "@/utils/captureHistory";
@@ -249,7 +253,7 @@ export const ImageLayer: React.FC<ImageLayerProps> = ({
 	);
 	useStateSubscriber(
 		AppSettingsPublisher,
-		useCallback((settings) => {
+		useCallback((settings: AppSettingsData) => {
 			setRenderEngine(
 				settings?.[AppSettingsGroup.SystemCore]?.renderEngine ??
 					AppSettingsRenderEngine.WebGL,

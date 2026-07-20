@@ -18,14 +18,20 @@ pub struct FreeDragWindowStopEvent {
     pub label: String,
 }
 
+impl Default for FreeDragWindowService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FreeDragWindowService {
     pub fn new() -> Self {
-        return Self {
+        Self {
             target_window: Arc::new(Mutex::new(None)),
             _mouse_move_guard: Arc::new(Mutex::new(None)),
             _mouse_up_guard: Arc::new(Mutex::new(None)),
             device_event_handler: Arc::new(Mutex::new(DeviceEventHandlerService::new())),
-        };
+        }
     }
 
     pub fn start_drag(&mut self, window: tauri::Window) -> Result<(), String> {
@@ -122,17 +128,17 @@ impl FreeDragWindowService {
                 move |button: &MouseButton| {
                     // 当鼠标左键抬起时完全停止拖动，清除所有相关状态
                     if *button == 1 {
-                        if let Ok(target_window) = target_window_for_button.lock() {
-                            if let Some(target_window) = target_window.as_ref() {
-                                target_window
-                                    .emit(
-                                        "free-drag-window-service:stop",
-                                        FreeDragWindowStopEvent {
-                                            label: target_window.label().to_owned(),
-                                        },
-                                    )
-                                    .unwrap();
-                            }
+                        if let Ok(target_window) = target_window_for_button.lock()
+                            && let Some(target_window) = target_window.as_ref()
+                        {
+                            target_window
+                                .emit(
+                                    "free-drag-window-service:stop",
+                                    FreeDragWindowStopEvent {
+                                        label: target_window.label().to_owned(),
+                                    },
+                                )
+                                .unwrap();
                         }
 
                         Self::stop_drag_core(

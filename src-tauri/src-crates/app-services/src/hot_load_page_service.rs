@@ -29,6 +29,12 @@ pub struct HotLoadPageService {
     page_id: RwLock<usize>,
 }
 
+impl Default for HotLoadPageService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl HotLoadPageService {
     pub fn new() -> Self {
         Self {
@@ -63,7 +69,7 @@ impl HotLoadPageService {
         let window = match tauri::WebviewWindowBuilder::new(
             app_handle,
             window_label.as_str(),
-            tauri::WebviewUrl::App(PathBuf::from(format!("/fixedContent?idle_page=true",))),
+            tauri::WebviewUrl::App(PathBuf::from("/fixedContent?idle_page=true".to_string())),
         )
         .resizable(false)
         .maximizable(false)
@@ -107,10 +113,7 @@ impl HotLoadPageService {
             *page_limit_guard
         };
 
-        let current_page_count = {
-            let current_page_list = self.page_list.len();
-            current_page_list
-        };
+        let current_page_count = { self.page_list.len() };
 
         if page_limit <= current_page_count {
             return Ok(());
@@ -165,10 +168,7 @@ impl HotLoadPageService {
 
     pub async fn pop_page(&self) -> Option<tauri::WebviewWindow> {
         let page_key = {
-            let page_item = self
-                .page_list
-                .iter()
-                .find(|entry| entry.value().status == true);
+            let page_item = self.page_list.iter().find(|entry| entry.value().status);
 
             match page_item {
                 Some(page_key) => page_key.key().to_owned(),

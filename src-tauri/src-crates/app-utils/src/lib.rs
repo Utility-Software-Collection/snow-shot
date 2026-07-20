@@ -80,22 +80,22 @@ pub async fn save_image_to_file(
     file_path: PathBuf,
 ) -> Result<(), String> {
     // 确保文件路径的父目录存在
-    if let Some(parent_dir) = file_path.parent() {
-        if !parent_dir.exists() {
-            match fs::create_dir_all(parent_dir).await {
-                Ok(_) => {
-                    log::info!(
-                        "[save_image_to_file] Created directory: {}",
-                        parent_dir.display()
-                    );
-                }
-                Err(e) => {
-                    return Err(format!(
-                        "[save_image_to_file] Failed to create directory {}: {}",
-                        parent_dir.display(),
-                        e
-                    ));
-                }
+    if let Some(parent_dir) = file_path.parent()
+        && !parent_dir.exists()
+    {
+        match fs::create_dir_all(parent_dir).await {
+            Ok(_) => {
+                log::info!(
+                    "[save_image_to_file] Created directory: {}",
+                    parent_dir.display()
+                );
+            }
+            Err(e) => {
+                return Err(format!(
+                    "[save_image_to_file] Failed to create directory {}: {}",
+                    parent_dir.display(),
+                    e
+                ));
             }
         }
     }
@@ -168,7 +168,7 @@ pub async fn save_image_to_file(
         }
     }
 
-    return Ok(());
+    Ok(())
 }
 
 pub fn get_mouse_position(
@@ -342,7 +342,7 @@ pub fn capture_target_monitor(
             }
         };
 
-        return Some(image);
+        Some(image)
     }
 
     #[cfg(target_os = "macos")]
@@ -580,7 +580,7 @@ pub fn encode_image(image: &image::DynamicImage, encoder: ImageEncoder) -> Vec<u
         }
     }
 
-    return buf;
+    buf
 }
 
 /// 将一个图像绘制到另一个图像上
@@ -662,14 +662,11 @@ pub async fn write_bitmap_image_to_clipboard_core(
 
         // 计算 DIB 数据大小：BITMAPINFOHEADER + 像素数据
         let header_size = mem::size_of::<BITMAPINFOHEADER>();
-        let row_size = ((image_width * 3 + 3) / 4) * 4; // 4字节对齐
+        let row_size = (image_width * 3).div_ceil(4) * 4; // 4字节对齐
         let pixel_data_size = row_size * image_height;
         let total_size = header_size + pixel_data_size;
 
-        let mut dib_data = Vec::with_capacity(total_size);
-        unsafe {
-            dib_data.set_len(total_size);
-        }
+        let mut dib_data = vec![0; total_size];
 
         // 构建 BITMAPINFOHEADER
         let bmi_header = BITMAPINFOHEADER {
@@ -698,7 +695,7 @@ pub async fn write_bitmap_image_to_clipboard_core(
             std::ptr::copy_nonoverlapping(header_bytes.as_ptr(), dib_data_ptr, header_bytes.len());
         }
 
-        let dib_data_ptr = unsafe { dib_data_ptr.offset(header_bytes.len() as isize) } as usize;
+        let dib_data_ptr = unsafe { dib_data_ptr.add(header_bytes.len()) } as usize;
         let rgba_image_ptr = rgba_image.as_ptr() as usize;
         (0..image_height).into_par_iter().rev().for_each(|y| {
             let rgba_index_start = y * image_width * 4;
@@ -768,10 +765,7 @@ pub async fn write_bitmap_image_to_clipboard(
         let image_width = image_width as usize;
         let image_height = image_height as usize;
         let image_total_bytes = decoder.total_bytes() as usize;
-        let mut rgba_image = Vec::with_capacity(image_total_bytes);
-        unsafe {
-            rgba_image.set_len(image_total_bytes);
-        }
+        let mut rgba_image = vec![0; image_total_bytes];
         decoder.read_image(&mut rgba_image).unwrap();
 
         write_bitmap_image_to_clipboard_core(rgba_image.as_ref(), image_width, image_height)
@@ -825,10 +819,10 @@ pub fn get_request_header(
     let header = request.headers().get(header_name);
     match header {
         Some(header) => Ok(header.clone()),
-        None => Err(String::from(format!(
+        None => Err(format!(
             "[get_request_header] Missing header: {}",
             header_name
-        ))),
+        )),
     }
 }
 
@@ -863,7 +857,7 @@ pub fn get_request_optional_string_header(
         Ok(text_header) => text_header,
         Err(_) => return Ok(None),
     };
-    if text_header == "" {
+    if text_header.is_empty() {
         Ok(None)
     } else {
         Ok(Some(text_header))
@@ -877,12 +871,10 @@ pub fn get_request_bool_header(
     let text_header = get_request_string_header(request, header_name)?;
     match text_header.parse::<bool>() {
         Ok(header) => Ok(header),
-        Err(_) => {
-            return Err(format!(
-                "[get_request_bool_header] Invalid header: {}",
-                header_name
-            ));
-        }
+        Err(_) => Err(format!(
+            "[get_request_bool_header] Invalid header: {}",
+            header_name
+        )),
     }
 }
 

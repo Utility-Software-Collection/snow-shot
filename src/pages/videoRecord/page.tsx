@@ -205,11 +205,10 @@ export const VideoRecordPage: React.FC = () => {
 			]);
 
 			await appWindow.show();
+			await appWindow.setIgnoreCursorEvents(true);
 
 			setVideoRecordState(VideoRecordState.Idle);
 			drawSelectRect(VideoRecordState.Idle);
-
-			appWindow.setIgnoreCursorEvents(true);
 		},
 		[drawSelectRect, setVideoRecordState, videoRecordStateRef],
 	);

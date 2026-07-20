@@ -28,14 +28,20 @@ pub struct ListenKeyUpEvent {
     key_text: String,
 }
 
+impl Default for ListenKeyService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ListenKeyService {
     pub fn new() -> Self {
-        return Self {
+        Self {
             _key_down_guard: Arc::new(Mutex::new(None)),
             _key_up_guard: Arc::new(Mutex::new(None)),
             window_label_set: Arc::new(Mutex::new(HashSet::new())),
             device_event_handler: Arc::new(Mutex::new(DeviceEventHandlerService::new())),
-        };
+        }
     }
 
     pub fn start(&mut self, app_handle: AppHandle, window: Window) -> Result<(), String> {

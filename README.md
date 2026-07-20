@@ -22,7 +22,6 @@
 ![GitHub Issues](https://img.shields.io/github/issues/Utility-Software-Collection/snow-shot)
 ![GitHub Pull Requests](https://img.shields.io/github/issues-pr/Utility-Software-Collection/snow-shot)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Utility-Software-Collection/snow-shot)
-[![Lines Of Code](https://tokei.rs/b1/github/Utility-Software-Collection/snow-shot?category=code)](https://github.com/Utility-Software-Collection/snow-shot)
 
 </div>
 
@@ -34,6 +33,8 @@
 >关于xiaofei分支的介绍可以前往 [此处](https://github.com/mg-chao/snow-shot/issues/1000) 查看
 >
 >本项目在xiaofei的基础上，进行了进一步的开发和改进，添加了新的功能项
+>
+>关于Macos版本，目前缺少测试人手，功能实现待测试，欢迎MacOS用户测试
 >
 >项目(xiaofei)：[https://github.com/xiaofeiTM233/snow-shot](https://github.com/xiaofeiTM233/snow-shot)
 >

@@ -84,7 +84,7 @@ class BaseStore<Value> {
 
 export class ChatHistoryStore extends BaseStore<{
 	session: ConversationItemType;
-	messages: MessageInfo[];
+	messages: MessageInfo<object>[];
 }> {
 	constructor() {
 		super("chat-history", 1000);

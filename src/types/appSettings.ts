@@ -380,6 +380,8 @@ export type AppSettingsData = {
 		prevImageFormat: ImageFormat;
 		prevSelectRect: ElementRect;
 		enableMicrophone: boolean;
+		enableSystemAudio: boolean;
+		videoRecordAudioTipDisabled: boolean;
 		/** 是否启用锁定绘制工具 */
 		enableLockDrawTool: boolean;
 		/** 序列号工具是否禁用箭头 */

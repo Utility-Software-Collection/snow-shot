@@ -145,7 +145,7 @@ pub fn run() {
                 .filter(move |_| {
                     #[cfg(debug_assertions)]
                     {
-                        return true;
+                        true
                     }
 
                     #[cfg(not(debug_assertions))]

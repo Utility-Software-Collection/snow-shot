@@ -3034,7 +3034,7 @@ dependencies = [
  "js-sys",
  "log",
  "wasm-bindgen",
- "windows-core 0.58.0",
+ "windows-core 0.62.2",
 ]
 
 [[package]]
@@ -6771,17 +6771,21 @@ dependencies = [
  "dashmap",
  "device_query",
  "ffmpeg-sidecar",
+ "libc",
  "log",
  "macos-accessibility-client",
  "num_cpus",
  "ort",
  "paddle-ocr-rs",
  "regex",
+ "screencapturekit",
  "serde",
  "snow-shot-app-shared",
  "snow-shot-app-utils",
  "tauri",
  "tokio",
+ "wasapi",
+ "windows 0.61.3",
  "xcap",
 ]
 
@@ -6838,7 +6842,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "log",
- "reqwest",
+ "reqwest 0.12.24",
  "rust-s3",
  "serde",
  "thiserror 2.0.17",
@@ -8628,6 +8632,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bfa7760aed19e106de2c7c0b581b509f2f25d3dacaf737cb82ac61bc6d760b0e"
 dependencies = [
  "try-lock",
+]
+
+[[package]]
+name = "wasapi"
+version = "0.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "80c3aa5d6b0e7acc3ea10cb19c334df0c8d825060f14a30d9e3b03385e6e5175"
+dependencies = [
+ "log",
+ "num-integer",
+ "thiserror 2.0.17",
+ "windows 0.62.2",
+ "windows-core 0.62.2",
 ]
 
 [[package]]

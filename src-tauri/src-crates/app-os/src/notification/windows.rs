@@ -83,7 +83,7 @@ pub fn send_simple_notification(title: &str, body: &str) -> Result<()> {
     );
 
     Command::new("powershell")
-        .args(&["-Command", &script])
+        .args(["-Command", &script])
         .output()
         .map_err(|_| Error::from_hresult(windows::Win32::Foundation::E_FAIL))?;
 
@@ -118,7 +118,7 @@ $notify.Dispose()"#,
     );
 
     if let Err(e) = std::process::Command::new("powershell")
-        .args(&["-WindowStyle", "Hidden", "-Command", &script])
+        .args(["-WindowStyle", "Hidden", "-Command", &script])
         .output()
     {
         log::error!("备用通知发送失败: {:?}", e);

@@ -30,7 +30,7 @@ pub async fn get_selected_text() -> String {
     // 避免与主线程互锁，特别是在 Windows 上涉及剪贴板和键盘模拟时
     match tokio::task::spawn_blocking(|| {
         // 使用 catch_unwind 捕获可能的 panic，确保不影响主程序
-        match std::panic::catch_unwind(|| get_selected_text::get_selected_text()) {
+        match std::panic::catch_unwind(get_selected_text::get_selected_text) {
             Ok(Ok(text)) => text,
             Ok(Err(e)) => {
                 log::warn!("[get_selected_text] Failed to get selected text: {:?}", e);
@@ -142,10 +142,7 @@ pub async fn click_through(window: tauri::Window) -> Result<(), ()> {
     }
 
     time::sleep(time::Duration::from_millis(300)).await;
-    match window.set_ignore_cursor_events(false) {
-        Ok(_) => (),
-        Err(_) => (),
-    }
+    let _ = window.set_ignore_cursor_events(false);
 
     Ok(())
 }
@@ -279,7 +276,7 @@ pub async fn create_full_screen_draw_window(
 
     let has_hot_load = main_window_opt.is_some() || switch_window_opt.is_some();
 
-    let main_window_url = format!("/fullScreenDraw");
+    let main_window_url = "/fullScreenDraw".to_string();
     let switch_mouse_through_window_url = format!(
         "/fullScreenDrawSwitchMouseThrough?monitor_x={}&monitor_y={}&monitor_width={}&monitor_height={}",
         monitor_x, monitor_y, monitor_width, monitor_height
@@ -315,7 +312,7 @@ pub async fn create_full_screen_draw_window(
                 }
                 None => tauri::WebviewWindowBuilder::new(
                     &app,
-                    format!("full-screen-draw"),
+                    "full-screen-draw".to_string(),
                     tauri::WebviewUrl::App(PathBuf::from(main_window_url.clone())),
                 )
                 .always_on_top(true)
@@ -364,7 +361,7 @@ pub async fn create_full_screen_draw_window(
                 }
                 None => tauri::WebviewWindowBuilder::new(
                     &app,
-                    format!("full-screen-draw-switch-mouse-through"),
+                    "full-screen-draw-switch-mouse-through".to_string(),
                     tauri::WebviewUrl::App(PathBuf::from(switch_mouse_through_window_url.clone())),
                 )
                 .always_on_top(true)
@@ -493,11 +490,11 @@ pub async fn get_current_monitor_info() -> Result<MonitorInfo, String> {
     let monitor_info = MonitorInfo {
         mouse_x: mouse_x - monitor_x,
         mouse_y: mouse_y - monitor_y,
-        monitor_x: monitor_x,
-        monitor_y: monitor_y,
-        monitor_width: monitor_width,
-        monitor_height: monitor_height,
-        monitor_scale_factor: monitor_scale_factor,
+        monitor_x,
+        monitor_y,
+        monitor_width,
+        monitor_height,
+        monitor_scale_factor,
     };
     Ok(monitor_info)
 }
@@ -1066,7 +1063,7 @@ fn is_window_fullscreen(hwnd: windows::Win32::Foundation::HWND) -> bool {
         };
 
         // GetMonitorInfoW 返回 BOOL，0 表示失败
-        if GetMonitorInfoW(monitor, &mut monitor_info).as_bool() == false {
+        if !GetMonitorInfoW(monitor, &mut monitor_info).as_bool() {
             return false;
         }
 
@@ -1103,7 +1100,7 @@ pub async fn has_focused_full_screen_window() -> Result<bool, String> {
                     return is_window_fullscreen(focused_window_hwnd);
                 }
 
-                return false;
+                false
             }))
     }
 

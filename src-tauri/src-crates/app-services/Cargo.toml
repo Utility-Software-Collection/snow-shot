@@ -23,3 +23,15 @@ ort = { version = "2.0.0-rc.10", default-features = false }
 [target.'cfg(any(target_os = "macos"))'.dependencies]
 xcap = { workspace = true }
 macos-accessibility-client = { workspace = true }
+libc = "0.2"
+screencapturekit = "0.2.8"
+
+[target.'cfg(any(target_os = "windows"))'.dependencies]
+wasapi = "0.23.0"
+windows = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_Storage_FileSystem",
+    "Win32_System_IO",
+    "Win32_System_Pipes",
+] }

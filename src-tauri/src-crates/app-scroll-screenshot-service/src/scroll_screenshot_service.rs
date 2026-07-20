@@ -100,6 +100,12 @@ pub struct ScrollScreenshotService {
     captured_frames: Vec<CapturedFrame>,
 }
 
+impl Default for ScrollScreenshotService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ScrollScreenshotService {
     pub fn new() -> Self {
         Self {
@@ -143,6 +149,8 @@ impl ScrollScreenshotService {
         self.captured_frames.clear();
     }
 
+    // Parameters mirror the user-configurable scroll capture options.
+    #[allow(clippy::too_many_arguments)]
     pub fn init(
         &mut self,
         direction: ScrollDirection,
@@ -377,8 +385,8 @@ impl ScrollScreenshotService {
         // Sticky headers, large solid backgrounds, and repeated card layouts can make
         // the zero-shift score deceptively good. If a non-zero shift is clearly
         // identifiable, prefer it so auto-scroll does not stop early.
-        if best_delta == 0 {
-            if let Some((non_zero_delta, non_zero_score)) = scores
+        if best_delta == 0
+            && let Some((non_zero_delta, non_zero_score)) = scores
                 .iter()
                 .filter(|(delta, score)| *delta > 2 && score.is_finite())
                 .min_by(|(delta_a, score_a), (delta_b, score_b)| {
@@ -388,24 +396,23 @@ impl ScrollScreenshotService {
                         .then_with(|| delta_a.cmp(delta_b))
                 })
                 .copied()
-            {
-                let non_zero_second_score = scores
-                    .iter()
-                    .filter(|(delta, _)| *delta > 2 && (delta - non_zero_delta).abs() > 2)
-                    .map(|(_, score)| *score)
-                    .fold(f32::INFINITY, f32::min);
-                let non_zero_is_ambiguous = non_zero_second_score.is_finite()
-                    && non_zero_second_score <= self.get_match_error_threshold()
-                    && non_zero_second_score - non_zero_score < 0.25;
+        {
+            let non_zero_second_score = scores
+                .iter()
+                .filter(|(delta, _)| *delta > 2 && (delta - non_zero_delta).abs() > 2)
+                .map(|(_, score)| *score)
+                .fold(f32::INFINITY, f32::min);
+            let non_zero_is_ambiguous = non_zero_second_score.is_finite()
+                && non_zero_second_score <= self.get_match_error_threshold()
+                && non_zero_second_score - non_zero_score < 0.25;
 
-                if !non_zero_is_ambiguous
-                    && non_zero_score <= self.get_match_error_threshold()
-                    && (best_score > self.get_match_error_threshold()
-                        || non_zero_score + 0.25 < best_score)
-                {
-                    best_delta = non_zero_delta;
-                    best_score = non_zero_score;
-                }
+            if !non_zero_is_ambiguous
+                && non_zero_score <= self.get_match_error_threshold()
+                && (best_score > self.get_match_error_threshold()
+                    || non_zero_score + 0.25 < best_score)
+            {
+                best_delta = non_zero_delta;
+                best_score = non_zero_score;
             }
         }
 

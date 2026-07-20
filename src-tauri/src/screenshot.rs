@@ -46,10 +46,7 @@ pub async fn capture_all_monitors(
 pub async fn capture_focused_window(
     correct_hdr_color_algorithm: CorrectHdrColorAlgorithm,
 ) -> Result<Response, String> {
-    snow_shot_tauri_commands_screenshot::capture_focused_window(
-        correct_hdr_color_algorithm,
-    )
-    .await
+    snow_shot_tauri_commands_screenshot::capture_focused_window(correct_hdr_color_algorithm).await
 }
 
 /// 获取当前焦点窗口的应用名称

@@ -119,7 +119,8 @@ export const settings = {
 	"settings.systemSettings.commonSettings.runLog": "运行日志",
 	"settings.systemSettings.commonSettings.runLog.tip":
 		"将日志输出到日志文件中，用于问题反馈",
-	"settings.systemSettings.commonSettings.boostProcessPriority": "提升进程优先级",
+	"settings.systemSettings.commonSettings.boostProcessPriority":
+		"提升进程优先级",
 	"settings.systemSettings.commonSettings.boostProcessPriority.tip":
 		"将应用进程优先级提升为「高于正常」，使截图与全局快捷键的响应更及时（仅 Windows）",
 	"settings.hotKeySettings.translation": "翻译",
@@ -626,7 +627,7 @@ export const settings = {
 	"settings.systemSettings.macosPermissionsSettings.recordScreen":
 		"录屏与系统录音",
 	"settings.systemSettings.macosPermissionsSettings.recordScreen.tip":
-		"截图功能将使用该权限用以获取屏幕画面",
+		"截图和系统音频录制将使用该权限获取屏幕画面与系统声音",
 	"settings.systemSettings.macosPermissionsSettings.accessibility": "辅助功能",
 	"settings.systemSettings.macosPermissionsSettings.accessibility.tip":
 		"通过辅助功能以实现鼠标移动、录入按键等操作",
@@ -649,7 +650,7 @@ export const settings = {
 		"控制图片层使用的 Pixi 渲染后端。WebGL 兼容性更好；WebGPU 性能潜力更高，不支持时会自动回退",
 	"settings.systemSettings.coreSettings.renderEngine.webgl": "WebGL",
 	"settings.systemSettings.coreSettings.renderEngine.webgpu": "WebGPU",
-	"settings.systemSettings.branchFunctionSettings": "分支功能开关/实验功能",
+	"settings.systemSettings.branchFunctionSettings": "实验功能",
 	"settings.systemSettings.branchFunctionSettings.disableWebViewSharedBuffer":
 		"禁用 WebView SharedBuffer",
 	"settings.systemSettings.branchFunctionSettings.disableWebViewSharedBuffer.tip":

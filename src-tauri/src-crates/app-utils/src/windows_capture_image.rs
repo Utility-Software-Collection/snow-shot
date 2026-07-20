@@ -52,9 +52,9 @@ impl GraphicsCaptureApiHandler for WindowsCaptureImage {
         let capture_info = match self.capture_info.take() {
             Some(capture_info) => capture_info,
             None => {
-                return Err(format!(
-                    "[WindowsCaptureImage::on_frame_arrived] capture_info is None"
-                ));
+                return Err(
+                    "[WindowsCaptureImage::on_frame_arrived] capture_info is None".to_string(),
+                );
             }
         };
 
@@ -86,11 +86,7 @@ impl GraphicsCaptureApiHandler for WindowsCaptureImage {
 
         // Rgba16F 每个像素占 8 字节
         let pixel_byte_count = 8;
-        let mut pixels: Vec<u8> = unsafe {
-            let mut pixels = Vec::with_capacity(pixels_count * pixel_byte_count);
-            pixels.set_len(pixels_count * pixel_byte_count);
-            pixels
-        };
+        let mut pixels = vec![0; pixels_count * pixel_byte_count];
 
         // 使用 row_pitch 而不是 width * pixel_byte_count，因为图像可能有行对齐填充
         let origin_image_buffer_base_index =
@@ -118,9 +114,7 @@ impl GraphicsCaptureApiHandler for WindowsCaptureImage {
             Err(_) => {
                 log::error!("[WindowsCaptureImage::on_frame_arrived] failed to send pixels");
 
-                Err(format!(
-                    "[WindowsCaptureImage::on_frame_arrived] failed to send pixels"
-                ))
+                Err("[WindowsCaptureImage::on_frame_arrived] failed to send pixels".to_string())
             }
         }
     }
@@ -148,8 +142,11 @@ fn linear_to_srgb_byte(linear: f32) -> u8 {
     }
 }
 
+/// # Safety
+/// `rgba16f_image` and `rgb8_image` must point to buffers large enough for
+/// `pixel_index`, and the destination pixel must not overlap the source pixel.
 #[inline]
-pub fn write_rgba16f_linear_to_rgb8(
+pub unsafe fn write_rgba16f_linear_to_rgb8(
     rgba16f_image: *const u8,
     rgb8_image: *mut u8,
     hdr_scale: f32,
@@ -185,8 +182,11 @@ pub fn write_rgba16f_linear_to_rgb8(
     }
 }
 
+/// # Safety
+/// `rgba16f_image` and `rgba8_image` must point to buffers large enough for
+/// `pixel_index`, and the destination pixel must not overlap the source pixel.
 #[inline]
-pub fn write_rgba16f_linear_to_rgba8(
+pub unsafe fn write_rgba16f_linear_to_rgba8(
     rgba16f_image: *const u8,
     rgba8_image: *mut u8,
     hdr_scale: f32,
@@ -252,11 +252,7 @@ fn process_captured_image(
     };
 
     let result_image_pixels_count = image_width * image_height;
-    let mut image_pixels: Vec<u8> = unsafe {
-        let mut image_pixels = Vec::with_capacity(result_image_pixels_count * pixel_len);
-        image_pixels.set_len(result_image_pixels_count * pixel_len);
-        image_pixels
-    };
+    let mut image_pixels = vec![0; result_image_pixels_count * pixel_len];
 
     let hdr_scale = 1000.0 / (monitor.monitor_hdr_info.sdr_white_level as f32);
 
@@ -266,7 +262,7 @@ fn process_captured_image(
         ColorFormat::Rgb8 => {
             (0..result_image_pixels_count)
                 .into_par_iter()
-                .for_each(|i| {
+                .for_each(|i| unsafe {
                     write_rgba16f_linear_to_rgb8(
                         rgba16f_image_ptr as *const u8,
                         image_pixels_ptr as *mut u8,
@@ -277,15 +273,16 @@ fn process_captured_image(
 
             match image::RgbImage::from_raw(image_width as u32, image_height as u32, image_pixels) {
                 Some(rgb8_image) => Ok(image::DynamicImage::ImageRgb8(rgb8_image)),
-                None => Err(format!(
+                None => Err(
                     "[windows_capture_image::process_captured_image] Failed to create rgb8 image"
-                )),
+                        .to_string(),
+                ),
             }
         }
         ColorFormat::Rgba8 => {
             (0..result_image_pixels_count)
                 .into_par_iter()
-                .for_each(|i| {
+                .for_each(|i| unsafe {
                     write_rgba16f_linear_to_rgba8(
                         rgba16f_image_ptr as *const u8,
                         image_pixels_ptr as *mut u8,
@@ -297,9 +294,10 @@ fn process_captured_image(
             match image::RgbaImage::from_raw(image_width as u32, image_height as u32, image_pixels)
             {
                 Some(rgba8_image) => Ok(image::DynamicImage::ImageRgba8(rgba8_image)),
-                None => Err(format!(
+                None => Err(
                     "[windows_capture_image::process_captured_image] Failed to create rgba8 image"
-                )),
+                        .to_string(),
+                ),
             }
         }
     }
@@ -313,9 +311,7 @@ pub fn capture_monitor_image(
 ) -> Result<image::DynamicImage, String> {
     // 检查系统是否支持 HDR 图像捕获
     if !SUPPORT_HDR_IMAGE.load(Ordering::Relaxed) {
-        return Err(format!(
-            "[windows_capture_image::capture_monitor_image] HDR image capture is not supported on this system"
-        ));
+        return Err("[windows_capture_image::capture_monitor_image] HDR image capture is not supported on this system".to_string());
     }
 
     let (sender, receiver) = channel();
@@ -329,10 +325,7 @@ pub fn capture_monitor_image(
 
     let capture_monitor =
         Monitor::from_raw_hmonitor(MonitorInfo::get_monitor_handle(&monitor.monitor).0);
-    let window = match window {
-        Some(window) => Some(windows_capture::window::Window::from_raw_hwnd(window.0)),
-        None => None,
-    };
+    let window = window.map(|window| windows_capture::window::Window::from_raw_hwnd(window.0));
 
     let start_result: Result<(), GraphicsCaptureApiError<String>> = match window {
         Some(window) => {
@@ -412,7 +405,7 @@ pub fn capture_monitor_image(
                     }
                     None => {
                         let settings = Settings::new(
-                            capture_monitor.clone(),
+                            capture_monitor,
                             CursorCaptureSettings::WithoutCursor,
                             draw_border_setting,
                             SecondaryWindowSettings::Default,

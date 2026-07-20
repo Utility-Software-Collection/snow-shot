@@ -47,7 +47,7 @@ use std::{cmp::Ordering, hash::Hash};
 /**
  * 元素层级
  */
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub struct ElementLevel {
     /**
      * 遍历时，首先获得层级最高的元素
@@ -109,6 +109,12 @@ impl Ord for ElementLevel {
 
         // 父元素索引排序，索引大的优先级越高
         other.parent_index.cmp(&self.parent_index)
+    }
+}
+
+impl PartialOrd for ElementLevel {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 

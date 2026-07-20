@@ -66,7 +66,7 @@ impl MonitorInfo {
                 monitor: monitor.clone(),
                 rect: monitor_rect,
                 scale_factor,
-                monitor_hdr_info: monitor_hdr_info.unwrap_or(MonitorHdrInfo::default()),
+                monitor_hdr_info: monitor_hdr_info.unwrap_or_default(),
             }
         }
 
@@ -185,7 +185,7 @@ impl MonitorInfo {
                 && capture_option.correct_hdr_color_algorithm != CorrectHdrColorAlgorithm::None
             {
                 capture_hdr_image = match windows_capture_image::capture_monitor_image(
-                    &self,
+                    self,
                     None,
                     crop_area,
                     capture_option.color_format,
@@ -201,7 +201,7 @@ impl MonitorInfo {
                 }
             }
 
-            return match capture_hdr_image {
+            match capture_hdr_image {
                 Some(image) => Some(image),
                 None => super::capture_target_monitor(
                     &self.monitor,
@@ -209,7 +209,7 @@ impl MonitorInfo {
                     exclude_window,
                     capture_option.color_format,
                 ),
-            };
+            }
         }
     }
 }
@@ -263,19 +263,16 @@ impl MonitorList {
                 {
                     MonitorInfo::new(
                         monitor,
-                        match &monitor_hdr_info_map {
-                            Some(monitor_hdr_info_map) => Some(
-                                monitor_hdr_info_map
-                                    .get(
-                                        MonitorInfo::get_device_name(monitor)
-                                            .unwrap_or_default()
-                                            .as_str(),
-                                    )
-                                    .unwrap_or(&MonitorHdrInfo::default())
-                                    .clone(),
-                            ),
-                            None => None,
-                        },
+                        monitor_hdr_info_map.as_ref().map(|monitor_hdr_info_map| {
+                            monitor_hdr_info_map
+                                .get(
+                                    MonitorInfo::get_device_name(monitor)
+                                        .unwrap_or_default()
+                                        .as_str(),
+                                )
+                                .unwrap_or(&MonitorHdrInfo::default())
+                                .clone()
+                        }),
                     )
                 }
 
@@ -354,29 +351,26 @@ impl MonitorList {
         if monitors.len() == 1 {
             let first_monitor = monitors.first().unwrap();
             let capture_image = first_monitor.capture(
-                if let Some(crop_region) = crop_region {
-                    Some(first_monitor.get_monitor_crop_region(crop_region))
-                } else {
-                    None
-                },
+                crop_region.map(|crop_region| first_monitor.get_monitor_crop_region(crop_region)),
                 exclude_window,
                 capture_option,
             );
 
             // 有些捕获失败的显示器，返回一个空图像，这里需要特殊处理
-            if let Some(capture_image) = capture_image.as_ref() {
-                if capture_image.width() == 1 && capture_image.height() == 1 {
-                    return match capture_option.color_format {
-                        ColorFormat::Rgb8 => Ok(image::DynamicImage::new_rgb8(
-                            (first_monitor.rect.max_x - first_monitor.rect.min_x) as u32,
-                            (first_monitor.rect.max_y - first_monitor.rect.min_y) as u32,
-                        )),
-                        ColorFormat::Rgba8 => Ok(image::DynamicImage::new_rgba8(
-                            (first_monitor.rect.max_x - first_monitor.rect.min_x) as u32,
-                            (first_monitor.rect.max_y - first_monitor.rect.min_y) as u32,
-                        )),
-                    };
-                }
+            if let Some(capture_image) = capture_image.as_ref()
+                && capture_image.width() == 1
+                && capture_image.height() == 1
+            {
+                return match capture_option.color_format {
+                    ColorFormat::Rgb8 => Ok(image::DynamicImage::new_rgb8(
+                        (first_monitor.rect.max_x - first_monitor.rect.min_x) as u32,
+                        (first_monitor.rect.max_y - first_monitor.rect.min_y) as u32,
+                    )),
+                    ColorFormat::Rgba8 => Ok(image::DynamicImage::new_rgba8(
+                        (first_monitor.rect.max_x - first_monitor.rect.min_x) as u32,
+                        (first_monitor.rect.max_y - first_monitor.rect.min_y) as u32,
+                    )),
+                };
             }
 
             return match capture_image {
@@ -400,11 +394,7 @@ impl MonitorList {
                 max_y: i32::MAX,
             })))
             .map(|monitor| {
-                let monitor_crop_region = if let Some(crop_region) = crop_region {
-                    Some(monitor.get_monitor_crop_region(crop_region))
-                } else {
-                    None
-                };
+                let monitor_crop_region = crop_region.map(|crop_region| monitor.get_monitor_crop_region(crop_region));
 
                 let capture_image = monitor.capture(monitor_crop_region, exclude_window, capture_option);
 
@@ -420,10 +410,7 @@ impl MonitorList {
                     }
                 }
             })
-            .filter_map(|result| match result {
-                Some((image, monitor_crop_region)) => Some((image, monitor_crop_region)),
-                None => None,
-            })
+            .flatten()
             .collect::<Vec<(image::DynamicImage, Option<ElementRect>)>>();
 
         if monitor_image_list.is_empty() {
@@ -533,7 +520,7 @@ impl MonitorList {
         let mut current_result = 0.0;
 
         // 处理 RGB 变换
-        current_result += matrix[channel_index * 5 + 0] * red_f; // 注意 current_output 未初始化
+        current_result += matrix[channel_index * 5] * red_f; // 注意 current_output 未初始化
         current_result += matrix[channel_index * 5 + 1] * green_f;
         current_result += matrix[channel_index * 5 + 2] * blue_f;
 
@@ -583,7 +570,7 @@ impl MonitorList {
         };
 
         let image_raw_ptr = image_raw_ptr as usize;
-        let output_data_ptr = image_raw_ptr as usize;
+        let output_data_ptr = image_raw_ptr;
 
         let pixel_count = (width * height) as usize;
 
@@ -810,18 +797,16 @@ impl MonitorList {
 
         // 如果启用了 HDR，并且显示器开启了 HDR 信息
         let mut need_reset_exclude_window = false;
-        if enable_exclude_window {
-            if let Some(exclude_window) = exclude_window {
-                match crate::set_exclude_from_capture(exclude_window, true).await {
-                    Ok(_) => {
-                        need_reset_exclude_window = true;
-                    }
-                    Err(e) => {
-                        return Err(format!(
-                            "[MonitorInfoList::capture_core] failed to set exclude from capture: {:?}",
-                            e
-                        ));
-                    }
+        if enable_exclude_window && let Some(exclude_window) = exclude_window {
+            match crate::set_exclude_from_capture(exclude_window, true).await {
+                Ok(_) => {
+                    need_reset_exclude_window = true;
+                }
+                Err(e) => {
+                    return Err(format!(
+                        "[MonitorInfoList::capture_core] failed to set exclude from capture: {:?}",
+                        e
+                    ));
                 }
             }
         }
@@ -831,16 +816,14 @@ impl MonitorList {
             Self::get_mag_color_effect_inverse(capture_option.correct_color_filter)
         );
 
-        if need_reset_exclude_window {
-            if let Some(exclude_window) = exclude_window {
-                match crate::set_exclude_from_capture(exclude_window, false).await {
-                    Ok(_) => (),
-                    Err(e) => {
-                        return Err(format!(
-                            "[MonitorInfoList::capture_core] failed to reset exclude from capture: {:?}",
-                            e
-                        ));
-                    }
+        if need_reset_exclude_window && let Some(exclude_window) = exclude_window {
+            match crate::set_exclude_from_capture(exclude_window, false).await {
+                Ok(_) => (),
+                Err(e) => {
+                    return Err(format!(
+                        "[MonitorInfoList::capture_core] failed to reset exclude from capture: {:?}",
+                        e
+                    ));
                 }
             }
         }
@@ -980,7 +963,8 @@ mod tests {
 
         image
             .save(
-                std::path::PathBuf::from(env::current_dir().unwrap())
+                env::current_dir()
+                    .unwrap()
                     .join("../../test_output/capture_multi_monitor.webp"),
             )
             .unwrap();
@@ -1077,7 +1061,8 @@ mod tests {
 
         image
             .save(
-                std::path::PathBuf::from(env::current_dir().unwrap())
+                env::current_dir()
+                    .unwrap()
                     .join("../../test_output/capture_single_monitor.webp"),
             )
             .unwrap();

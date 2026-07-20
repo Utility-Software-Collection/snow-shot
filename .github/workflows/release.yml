@@ -180,6 +180,9 @@ jobs:
           mv excalidraw ../excalidraw
         shell: bash
 
+      - name: Sync application version
+        run: node scripts/sync-version.mjs "${{ needs.create-release.outputs.app_version }}"
+
       # 创建 .env 文件以支持联网功能
       - name: Create .env file
         run: |

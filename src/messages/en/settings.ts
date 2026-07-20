@@ -656,7 +656,7 @@ export const settings = {
 	"settings.systemSettings.macosPermissionsSettings.recordScreen":
 		"Screen Recording & System Audio",
 	"settings.systemSettings.macosPermissionsSettings.recordScreen.tip":
-		"Screenshot function uses this permission to get screen content",
+		"Screenshots and system audio recording use this permission to capture the screen and system sound",
 	"settings.systemSettings.macosPermissionsSettings.accessibility":
 		"Accessibility",
 	"settings.systemSettings.macosPermissionsSettings.accessibility.tip":
@@ -683,8 +683,7 @@ export const settings = {
 		"Controls the Pixi render backend for image layers. WebGL is more compatible; WebGPU has higher performance potential and falls back automatically when unsupported",
 	"settings.systemSettings.coreSettings.renderEngine.webgl": "WebGL",
 	"settings.systemSettings.coreSettings.renderEngine.webgpu": "WebGPU",
-	"settings.systemSettings.branchFunctionSettings":
-		"Branch Switches / Experimental",
+	"settings.systemSettings.branchFunctionSettings": "Experimental",
 	"settings.systemSettings.branchFunctionSettings.disableWebViewSharedBuffer":
 		"Disable WebView SharedBuffer",
 	"settings.systemSettings.branchFunctionSettings.disableWebViewSharedBuffer.tip":

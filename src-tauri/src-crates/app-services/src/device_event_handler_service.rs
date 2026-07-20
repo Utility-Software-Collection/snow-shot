@@ -13,6 +13,12 @@ pub struct DeviceEventHandlerService {
     device_event_handler: Option<DeviceEventsHandlerInnerThread>,
 }
 
+impl Default for DeviceEventHandlerService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DeviceEventHandlerService {
     pub fn new() -> Self {
         Self {
@@ -26,23 +32,24 @@ impl DeviceEventHandlerService {
     }
 
     pub fn get_device_event_handler(&mut self) -> Result<&DeviceEventsHandlerInnerThread, String> {
-        if self.device_event_handler.is_some() {
-            return Ok(&self.device_event_handler.as_ref().unwrap());
-        }
-
-        #[cfg(target_os = "macos")]
-        {
-            if !macos_accessibility_client::accessibility::application_is_trusted() {
-                return Err(format!(
-                    "[DeviceEventHandlerService] Accessibility is not enabled"
-                ));
+        if self.device_event_handler.is_none() {
+            #[cfg(target_os = "macos")]
+            {
+                if !macos_accessibility_client::accessibility::application_is_trusted() {
+                    return Err(
+                        "[DeviceEventHandlerService] Accessibility is not enabled".to_string()
+                    );
+                }
             }
+
+            let handler =
+                DeviceEventsHandlerInnerThread::new(Duration::from_millis(1000 / self.fps));
+            self.device_event_handler = Some(handler);
         }
 
-        let handler = DeviceEventsHandlerInnerThread::new(Duration::from_millis(1000 / self.fps));
-
-        self.device_event_handler = Some(handler);
-        Ok(&self.device_event_handler.as_ref().unwrap())
+        self.device_event_handler
+            .as_ref()
+            .ok_or_else(|| "[DeviceEventHandlerService] Handler is not initialized".to_string())
     }
 
     pub fn on_mouse_move<Callback: Fn(&MousePosition) + Sync + Send + 'static>(

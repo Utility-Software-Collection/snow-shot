@@ -3,19 +3,19 @@ use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterato
 use serde::Serialize;
 use snow_shot_app_os::ui_automation::UIElements;
 
-#[cfg(target_os = "windows")]
-use windows::Win32::Foundation::HWND;
-#[cfg(target_os = "windows")]
-use std::ffi::c_void;
 use snow_shot_app_shared::ElementRect;
 use snow_shot_app_utils::monitor_info::{
     CaptureOption, ColorFormat, CorrectHdrColorAlgorithm, MonitorList,
 };
 use snow_shot_global_state::WebViewSharedBufferState;
+#[cfg(target_os = "windows")]
+use std::ffi::c_void;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::ipc::Response;
 use tokio::sync::Mutex;
+#[cfg(target_os = "windows")]
+use windows::Win32::Foundation::HWND;
 
 pub async fn capture_current_monitor(
     #[allow(unused_variables)] window: tauri::Window,
@@ -163,20 +163,17 @@ pub fn capture_window_hdr_image(window: &xcap::Window) -> Option<image::DynamicI
         }
     };
 
-    let hdr_info = match hdr_infos.get(
+    let hdr_info = hdr_infos.get(
         MonitorInfo::get_device_name(&monitor)
             .unwrap_or_default()
             .as_str(),
-    ) {
-        Some(hdr_info) => hdr_info,
-        None => return None,
-    };
+    )?;
 
     if !hdr_info.hdr_enabled {
         return None;
     }
 
-    return match windows_capture_image::capture_monitor_image(
+    match windows_capture_image::capture_monitor_image(
         &MonitorInfo::new(&monitor, Some(hdr_info.clone())),
         Some(HWND(window.hwnd().unwrap())),
         None,
@@ -190,13 +187,12 @@ pub fn capture_window_hdr_image(window: &xcap::Window) -> Option<image::DynamicI
             );
             None
         }
-    };
+    }
 }
 
 pub async fn capture_focused_window(
     #[allow(unused_variables)] correct_hdr_color_algorithm: CorrectHdrColorAlgorithm,
-) -> Result<Response, String>
-{
+) -> Result<Response, String> {
     let image;
 
     #[cfg(target_os = "windows")]
@@ -289,7 +285,8 @@ pub async fn capture_focused_window(
     }
 
     // 编码图像为 PNG 格式并返回
-    let image_buffer = snow_shot_app_utils::encode_image(&image, snow_shot_app_utils::ImageEncoder::Png);
+    let image_buffer =
+        snow_shot_app_utils::encode_image(&image, snow_shot_app_utils::ImageEncoder::Png);
 
     Ok(Response::new(image_buffer))
 }
@@ -338,7 +335,9 @@ pub async fn init_ui_elements_cache(
 ) -> Result<(), String> {
     let mut ui_elements = ui_elements.lock().await;
 
-    ui_elements.init_cache().map_err(|e| format!("[init_ui_elements_cache] error: {:?}", e))?;
+    ui_elements
+        .init_cache()
+        .map_err(|e| format!("[init_ui_elements_cache] error: {:?}", e))?;
 
     #[cfg(target_os = "windows")]
     if let Some(blacklist) = blacklist {
@@ -398,13 +397,13 @@ pub async fn get_window_elements(
                     let w = xcap::ImplWindow::new(HWND(*window_hwnd as *mut c_void));
 
                     // 黑名单过滤：检查应用名是否在黑名单中
-                    if let Some(ref bl) = blacklist {
-                        if let Ok(app_name) = w.app_name() {
-                            let app_name_lower = app_name.to_lowercase();
-                            for item in bl {
-                                if app_name_lower.contains(&item.to_lowercase()) {
-                                    return None;
-                                }
+                    if let Some(ref bl) = blacklist
+                        && let Ok(app_name) = w.app_name()
+                    {
+                        let app_name_lower = app_name.to_lowercase();
+                        for item in bl {
+                            if app_name_lower.contains(&item.to_lowercase()) {
+                                return None;
                             }
                         }
                     }
@@ -461,8 +460,6 @@ pub async fn get_window_elements(
                 }
             }
 
-            let window_rect: ElementRect;
-            let window_id: u32;
             let x: i32;
             let y: i32;
             let width: i32;
@@ -498,12 +495,12 @@ pub async fn get_window_elements(
                 height = cg_rect.size.height as i32;
             }
 
-            window_id = match window.id() {
+            let window_id: u32 = match window.id() {
                 Ok(id) => id,
                 Err(_) => return None,
             };
 
-            window_rect = ElementRect {
+            let window_rect: ElementRect = ElementRect {
                 min_x: x,
                 min_y: y,
                 max_x: x + width,
@@ -591,7 +588,7 @@ pub async fn create_draw_window(app: tauri::AppHandle) {
                 .unwrap()
                 .as_secs()
         ),
-        tauri::WebviewUrl::App(format!("/draw").into()),
+        tauri::WebviewUrl::App("/draw".to_string().into()),
     )
     .resizable(false)
     .maximizable(false)
@@ -650,8 +647,7 @@ pub async fn capture_full_screen(
     capture_history_file_path: String,
     correct_hdr_color_algorithm: CorrectHdrColorAlgorithm,
     correct_color_filter: bool,
-) -> Result<Response, String>
-{
+) -> Result<Response, String> {
     // 激活的显示器
     let (mouse_x, mouse_y) = snow_shot_app_utils::get_mouse_position(&app_handle)?;
     let active_monitor = MonitorList::get_by_region(
@@ -700,13 +696,8 @@ pub async fn capture_full_screen(
     let active_monitor_crop_region_height =
         (active_monitor_crop_region.max_y - active_monitor_crop_region.min_y) as usize;
 
-    let mut active_monitor_image_bytes = unsafe {
-        let mut bytes = Vec::with_capacity(
-            active_monitor_crop_region_width * active_monitor_crop_region_height * 3,
-        );
-        bytes.set_len(active_monitor_crop_region_width * active_monitor_crop_region_height * 3);
-        bytes
-    };
+    let mut active_monitor_image_bytes =
+        vec![0; active_monitor_crop_region_width * active_monitor_crop_region_height * 3];
 
     let all_monitor_image_width = all_monitors_image.width() as usize;
     let base_index =
@@ -743,7 +734,10 @@ pub async fn capture_full_screen(
     };
 
     // 编码图像为 PNG 格式
-    let image_buffer = snow_shot_app_utils::encode_image(&active_monitor_image, snow_shot_app_utils::ImageEncoder::Png);
+    let image_buffer = snow_shot_app_utils::encode_image(
+        &active_monitor_image,
+        snow_shot_app_utils::ImageEncoder::Png,
+    );
 
     // 写入到截图历史
     let capture_history_file_path = PathBuf::from(capture_history_file_path);

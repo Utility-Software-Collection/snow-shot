@@ -23,6 +23,7 @@ const STABLE_CAPTURE_WAIT_MS: u64 = 80;
 const STABLE_CAPTURE_AVG_DIFF_THRESHOLD: f32 = 1.5;
 const STABLE_CAPTURE_SAMPLE_STEP: usize = 16;
 
+#[allow(clippy::too_many_arguments)]
 pub async fn scroll_screenshot_init(
     scroll_screenshot_service: tauri::State<'_, Mutex<ScrollScreenshotService>>,
     direction: ScrollDirection,
@@ -151,6 +152,7 @@ async fn wait_for_stable_capture(
     Ok(previous_image)
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn scroll_screenshot_capture(
     window: tauri::Window,
     scroll_screenshot_image_service: tauri::State<'_, Mutex<ScrollScreenshotImageService>>,
@@ -346,9 +348,7 @@ pub async fn scroll_screenshot_save_to_file(
     let image = match image {
         Some(image) => image,
         None => {
-            return Err(format!(
-                "[scroll_screenshot_save_to_file] Failed to export image"
-            ));
+            return Err("[scroll_screenshot_save_to_file] Failed to export image".to_string());
         }
     };
 
@@ -429,9 +429,7 @@ pub async fn scroll_screenshot_get_image_data(
     let image_data = match image {
         Some(image) => image,
         None => {
-            return Err(format!(
-                "[scroll_screenshot_get_image_data] Failed to export image",
-            ));
+            return Err("[scroll_screenshot_get_image_data] Failed to export image".to_string());
         }
     };
 

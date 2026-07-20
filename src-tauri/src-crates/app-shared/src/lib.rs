@@ -13,19 +13,21 @@ impl EnigoManager {
     }
 
     pub fn get_enigo(&mut self) -> Result<&mut Enigo, String> {
-        if self.enigo.is_some() {
-            return Ok(self.enigo.as_mut().unwrap());
+        if self.enigo.is_none() {
+            let enigo = Enigo::new(&Settings::default())
+                .map_err(|e| format!("[EnigoManager] Could not get enigo: {}", e))?;
+            self.enigo = Some(enigo);
         }
 
-        let enigo = match Enigo::new(&Settings::default()) {
-            Ok(enigo) => enigo,
-            Err(e) => {
-                return Err(format!("[EnigoManager] Could not get enigo: {}", e));
-            }
-        };
+        self.enigo
+            .as_mut()
+            .ok_or_else(|| "[EnigoManager] Enigo is not initialized".to_string())
+    }
+}
 
-        self.enigo = Some(enigo);
-        Ok(self.enigo.as_mut().unwrap())
+impl Default for EnigoManager {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -93,7 +95,7 @@ mod tests {
 
     #[test]
     fn test_overlaps() {
-        assert_eq!(
+        assert!(
             ElementRect {
                 min_x: 0,
                 min_y: 0,
@@ -105,12 +107,11 @@ mod tests {
                 min_y: 0,
                 max_x: 100,
                 max_y: 100,
-            }),
-            true
+            })
         );
 
-        assert_eq!(
-            ElementRect {
+        assert!(
+            !ElementRect {
                 min_x: 0,
                 min_y: 0,
                 max_x: 100,
@@ -121,12 +122,11 @@ mod tests {
                 min_y: 101,
                 max_x: 200,
                 max_y: 200,
-            }),
-            false
+            })
         );
 
-        assert_eq!(
-            ElementRect {
+        assert!(
+            !ElementRect {
                 min_x: 0,
                 min_y: 0,
                 max_x: 100,
@@ -137,8 +137,7 @@ mod tests {
                 min_y: 100,
                 max_x: 100,
                 max_y: 100,
-            }),
-            false
+            })
         );
     }
 }

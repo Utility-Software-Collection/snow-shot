@@ -18,6 +18,12 @@ pub enum OcrModel {
     RapidOcrV4,
 }
 
+impl Default for OcrService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl OcrService {
     pub fn new() -> Self {
         Self {
@@ -65,10 +71,10 @@ impl OcrService {
 
     fn build_session(builder: SessionBuilder) -> Result<SessionBuilder, ort::Error> {
         let num_thread = num_cpus::get_physical();
-        Ok(builder
+        builder
             .with_inter_threads(num_thread)?
             .with_intra_threads(num_thread)?
-            .with_optimization_level(ort::session::builder::GraphOptimizationLevel::Level3)?)
+            .with_optimization_level(ort::session::builder::GraphOptimizationLevel::Level3)
     }
 
     pub async fn init_session(&mut self) -> Result<(), String> {
@@ -123,7 +129,8 @@ impl OcrService {
         ocr_model_write_to_memory: bool,
     ) -> Result<(), String> {
         let det_file = det_model_name.unwrap_or_else(|| "ch_PP-OCRv4_det_infer.onnx".to_string());
-        let cls_file = cls_model_name.unwrap_or_else(|| "ch_ppocr_mobile_v2.0_cls_infer.onnx".to_string());
+        let cls_file =
+            cls_model_name.unwrap_or_else(|| "ch_ppocr_mobile_v2.0_cls_infer.onnx".to_string());
         let rec_file = rec_model_name.unwrap_or_else(|| "ch_PP-OCRv4_rec_infer.onnx".to_string());
 
         log::info!(

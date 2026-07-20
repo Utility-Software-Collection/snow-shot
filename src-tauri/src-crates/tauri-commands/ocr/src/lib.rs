@@ -1,4 +1,3 @@
-use log;
 use paddle_ocr_rs::ocr_result::TextBlock;
 use rayon::iter::IntoParallelIterator;
 use rayon::iter::ParallelIterator;
@@ -42,11 +41,9 @@ pub struct OcrDetectResult {
 
 fn convert_rgba_to_rgb(image: &[u8]) -> Vec<u8> {
     let pixel_count = image.len() / 4;
-    let mut rgb_data = Vec::with_capacity(pixel_count * 3);
+    let mut rgb_data = vec![0; pixel_count * 3];
 
     unsafe {
-        rgb_data.set_len(pixel_count * 3);
-
         let image_ptr_address = image.as_ptr() as usize;
         let rgb_ptr_address = rgb_data.as_mut_ptr() as usize;
 
@@ -113,7 +110,7 @@ pub async fn ocr_detect_core(
             text_blocks: ocr_result.text_blocks,
             scale_factor,
         }),
-        Err(e) => return Err(format!("[ocr_detect_core] Failed to detect text: {}", e)),
+        Err(e) => Err(format!("[ocr_detect_core] Failed to detect text: {}", e)),
     }
 }
 
@@ -225,10 +222,10 @@ pub async fn list_ocr_model_files(dir_path: PathBuf) -> Result<Vec<String>, Stri
     let mut files = Vec::new();
     while let Ok(Some(entry)) = entries.next_entry().await {
         let file_name = entry.file_name();
-        if let Some(name) = file_name.to_str() {
-            if name.ends_with(".onnx") {
-                files.push(name.to_string());
-            }
+        if let Some(name) = file_name.to_str()
+            && name.ends_with(".onnx")
+        {
+            files.push(name.to_string());
         }
     }
     files.sort();

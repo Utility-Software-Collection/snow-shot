@@ -152,7 +152,7 @@ impl S3Service {
         // 上传到 S3
         let response = self
             .bucket
-            .put_object_with_content_type(&full_key, &data, &ct)
+            .put_object_with_content_type(&full_key, data, &ct)
             .await
             .context("Upload data to S3 failed")?;
 

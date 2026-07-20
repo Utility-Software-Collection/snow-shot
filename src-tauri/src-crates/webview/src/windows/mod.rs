@@ -62,7 +62,7 @@ pub async fn create_shared_buffer(
             }
         };
 
-        let mut shared_buffer_ptr: *mut u8 = 0 as *mut u8;
+        let mut shared_buffer_ptr = std::ptr::null_mut::<u8>();
         match unsafe { shared_buffer.Buffer(&mut shared_buffer_ptr) } {
             Ok(_) => (),
             Err(e) => {
@@ -144,9 +144,7 @@ pub async fn create_shared_buffer(
     let result = match transfer_result_receiver.recv() {
         Ok(result) => result,
         Err(_) => {
-            return Err(format!(
-                "[create_shared_buffer] Failed to receive transfer result",
-            ));
+            return Err("[create_shared_buffer] Failed to receive transfer result".to_string());
         }
     };
 
@@ -168,6 +166,12 @@ pub struct SharedBufferChannel {
 /// 用于和 JavaScript 通过 SharedBuffer 传递数据
 pub struct SharedBufferService {
     channel_map: DashMap<String, SharedBufferChannel>,
+}
+
+impl Default for SharedBufferService {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SharedBufferService {
@@ -287,9 +291,10 @@ impl SharedBufferService {
         let result = match shared_buffer_address_receiver.recv() {
             Ok(result) => result,
             Err(_) => {
-                return Err(format!(
-                    "[SharedBufferService::create_channel] Failed to receive shared buffer address",
-                ));
+                return Err(
+                    "[SharedBufferService::create_channel] Failed to receive shared buffer address"
+                        .to_string(),
+                );
             }
         };
 
@@ -317,13 +322,9 @@ impl SharedBufferService {
             }
         };
 
-        let mut data = unsafe {
-            let mut array = Vec::with_capacity(channel.buffer_size);
-            array.set_len(channel.buffer_size);
-            array
-        };
+        let mut data = vec![0; channel.buffer_size];
 
-        let mut shared_buffer_ptr: *mut u8 = 0 as *mut u8;
+        let mut shared_buffer_ptr = std::ptr::null_mut::<u8>();
         match unsafe { channel.buffer.0.Buffer(&mut shared_buffer_ptr) } {
             Ok(_) => (),
             Err(e) => {

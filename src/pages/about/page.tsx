@@ -29,8 +29,11 @@ import { getCommitSha } from "@/commands/core";
 import { getLatestVersion } from "@/components/checkVersion";
 
 const { Title, Paragraph, Text } = Typography;
-const forkAuthorUrl = "https://github.com/Utility-Software-Collection";
+const originalAuthorUrl = "https://github.com/mg-chao";
+const upstreamAuthorUrl = "https://github.com/xiaofeiTM233";
+const currentMaintainerUrl = "https://github.com/Utility-Software-Collection";
 const originalRepositoryUrl = "https://github.com/mg-chao/snow-shot";
+const upstreamRepositoryUrl = "https://github.com/xiaofeiTM233/snow-shot";
 const forkRepositoryUrl =
 	"https://github.com/Utility-Software-Collection/snow-shot";
 const githubIssuesUrl =
@@ -212,15 +215,23 @@ export const AboutPage = () => {
 					<Tag color="green">
 						<a
 							style={{ color: token.colorLink }}
-							onClick={() => openUrl("https://github.com/mg-chao")}
+							onClick={() => openUrl(originalAuthorUrl)}
 						>
 							{intl.formatMessage({ id: "about.author" })}
+						</a>
+					</Tag>
+					<Tag color="orange">
+						<a
+							style={{ color: token.colorLink }}
+							onClick={() => openUrl(upstreamAuthorUrl)}
+						>
+							{intl.formatMessage({ id: "about.upstreamAuthor" })}
 						</a>
 					</Tag>
 					<Tag color="purple">
 						<a
 							style={{ color: token.colorLink }}
-							onClick={() => openUrl(forkAuthorUrl)}
+							onClick={() => openUrl(currentMaintainerUrl)}
 						>
 							{intl.formatMessage({ id: "about.forkAuthor" })}
 						</a>
@@ -266,6 +277,17 @@ export const AboutPage = () => {
 							children: (
 								<a onClick={() => openUrl(originalRepositoryUrl)}>
 									{originalRepositoryUrl}
+								</a>
+							),
+						},
+						{
+							key: "upstreamRepository",
+							label: intl.formatMessage({
+								id: "about.branchInfo.upstreamRepository",
+							}),
+							children: (
+								<a onClick={() => openUrl(upstreamRepositoryUrl)}>
+									{upstreamRepositoryUrl}
 								</a>
 							),
 						},

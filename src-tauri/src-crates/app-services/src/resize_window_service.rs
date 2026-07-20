@@ -27,17 +27,23 @@ pub struct ResizeWindowService {
     device_event_handler: Arc<Mutex<DeviceEventHandlerService>>,
 }
 
+impl Default for ResizeWindowService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ResizeWindowService {
     pub fn new() -> Self {
         let mut device_event_handler = DeviceEventHandlerService::new();
         device_event_handler.set_fps(30);
 
-        return Self {
+        Self {
             target_window: Arc::new(Mutex::new(None)),
             _mouse_move_guard: Arc::new(Mutex::new(None)),
             _mouse_up_guard: Arc::new(Mutex::new(None)),
             device_event_handler: Arc::new(Mutex::new(device_event_handler)),
-        };
+        }
     }
 
     pub fn start_resize(

@@ -19,6 +19,7 @@ pub async fn video_record_init(
 
 /// 开始视频录制
 #[command]
+#[allow(clippy::too_many_arguments)]
 pub async fn video_record_start(
     video_service: tauri::State<'_, Mutex<VideoRecordService>>,
     min_x: i32,

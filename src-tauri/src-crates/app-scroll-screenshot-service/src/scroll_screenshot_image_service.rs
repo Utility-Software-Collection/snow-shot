@@ -16,6 +16,12 @@ pub struct ScrollScreenshotImageService {
     image_queue: VecDeque<ScrollScreenshotImage>,
 }
 
+impl Default for ScrollScreenshotImageService {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ScrollScreenshotImageService {
     pub fn new() -> Self {
         Self {
@@ -35,7 +41,7 @@ impl ScrollScreenshotImageService {
      * 从队列头开始获取连续相同direction的图片，遇到不同direction则终止
      */
     pub fn pop_image(&mut self) -> Option<ScrollScreenshotImage> {
-        return self.image_queue.pop_front();
+        self.image_queue.pop_front()
     }
 
     pub fn has_image(&self) -> bool {

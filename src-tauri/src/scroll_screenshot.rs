@@ -12,6 +12,7 @@ use snow_shot_app_scroll_screenshot_service::scroll_screenshot_service::{
 use snow_shot_global_state::WebViewSharedBufferState;
 
 #[command]
+#[allow(clippy::too_many_arguments)]
 pub async fn scroll_screenshot_init(
     scroll_screenshot_service: tauri::State<'_, Mutex<ScrollScreenshotService>>,
     direction: ScrollDirection,
@@ -38,6 +39,7 @@ pub async fn scroll_screenshot_init(
 }
 
 #[command]
+#[allow(clippy::too_many_arguments)]
 pub async fn scroll_screenshot_capture(
     window: tauri::Window,
     scroll_screenshot_image_service: tauri::State<'_, Mutex<ScrollScreenshotImageService>>,

@@ -69,6 +69,12 @@ struct UIAutomationWrapper {
 unsafe impl Send for UIAutomationWrapper {}
 unsafe impl Sync for UIAutomationWrapper {}
 
+impl Default for UIElements {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl UIElements {
     pub fn new() -> Self {
         Self {
@@ -293,9 +299,9 @@ impl UIElements {
             );
 
             self.window_rect_map
-                .insert(current_level.clone(), current_child_rect);
+                .insert(current_level, current_child_rect);
             self.window_index_level_map
-                .insert(current_level.window_index, current_level.clone());
+                .insert(current_level.window_index, current_level);
             self.window_app_name_map
                 .insert(current_level.window_index, app_name.clone());
         }
@@ -373,16 +379,14 @@ impl UIElements {
 
         let mut element_rect = Self::normalize_rect(element_rect);
 
-        let window_rect = self
+        let window_rect = *self
             .window_rect_map
             .get(
-                &self
-                    .window_index_level_map
+                self.window_index_level_map
                     .get(&element_level.window_index)
                     .unwrap_or(&element_level),
             )
-            .unwrap_or(&element_rect)
-            .clone();
+            .unwrap_or(&element_rect);
 
         if Self::beyond_rect(element_rect, window_rect) {
             element_rect = Self::clip_rect(element_rect, window_rect);
@@ -416,8 +420,8 @@ impl UIElements {
         let mut max_level = ElementLevel::root();
         let mut max_level_rect = None;
         for rect in element_rect {
-            if max_level.cmp(&rect.data) == Ordering::Less {
-                max_level = rect.data.clone();
+            if max_level.cmp(rect.data) == Ordering::Less {
+                max_level = *rect.data;
                 max_level_rect = Some(rect.rect);
             }
         }
@@ -428,12 +432,9 @@ impl UIElements {
             None => return None,
         };
 
-        match self.element_level_map.get(&max_level) {
-            Some((element, token)) => {
-                Some((element.clone(), max_level, element_rtree_rect, *token))
-            }
-            None => None,
-        }
+        self.element_level_map
+            .get(&max_level)
+            .map(|(element, token)| (element.clone(), max_level, element_rtree_rect, *token))
     }
 
     // fn skip_invalid_window(
@@ -508,7 +509,7 @@ impl UIElements {
             Some(element) => match element {
                 ElementChildrenNextSiblingCacheItem::Element(element, level) => {
                     queue = Some(element.clone());
-                    current_level = level.clone();
+                    current_level = *level;
                 }
                 // 叶子节点说明直接命中了，不需要重新获取
                 ElementChildrenNextSiblingCacheItem::Leaf => {}
@@ -532,7 +533,7 @@ impl UIElements {
             match first_child {
                 Ok(element) => {
                     queue = Some(element.clone());
-                    current_level = parent_level.clone();
+                    current_level = parent_level;
                     current_level.next_level();
 
                     self.element_children_next_sibling_cache.insert(
@@ -676,7 +677,7 @@ impl UIElements {
             previous_rect = current_rect;
         }
 
-        return Ok(result_rect_list);
+        Ok(result_rect_list)
     }
 }
 

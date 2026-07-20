@@ -7,9 +7,9 @@ import {
 	type ConversationItemType,
 	Conversations,
 	Sender,
-	type SenderRef,
 	Welcome,
 } from "@ant-design/x";
+import type { SenderRef } from "@ant-design/x/es/sender";
 import {
 	AbstractChatProvider,
 	type AbstractXRequestClass,
@@ -240,10 +240,13 @@ export const MarkdownContent: React.FC<{
 	);
 };
 
-const modelRequest = XRequest(getUrl("/api/v1/chat/completions"), {
-	fetch: appFetch,
-	manual: true,
-});
+const modelRequest = XRequest<ChatRequestInput, SSEOutput, ChatMessage>(
+	getUrl("/api/v1/chat/completions"),
+	{
+		fetch: appFetch,
+		manual: true,
+	},
+);
 
 type ChatModelConfig = ChatModel & {
 	customConfig?: ChatApiConfig;
@@ -317,9 +320,20 @@ type ChatRequestBody = {
 	stream: boolean;
 };
 
+type ChatRequestInput = ChatRequestBody & {
+	message?: ChatMessage;
+};
+
+type ChatRequest = AbstractXRequestClass<
+	ChatRequestInput,
+	SSEOutput,
+	ChatMessage
+>;
+type ChatMessageInfo = MessageInfo<ChatMessage>;
+
 class SnowShotChatProvider extends AbstractChatProvider<
 	ChatMessage,
-	ChatRequestBody,
+	ChatRequestInput,
 	SSEOutput
 > {
 	private selectedModelRef: { current: string | undefined };
@@ -327,19 +341,19 @@ class SnowShotChatProvider extends AbstractChatProvider<
 	private enableThinkingRef: { current: boolean };
 	private getCustomModelRequest: (
 		model: string,
-	) => { request: AbstractXRequestClass; config: ChatApiConfig } | undefined;
+	) => { request: ChatRequest; config: ChatApiConfig } | undefined;
 	private intl: IntlShape;
 	private messageApi: { error: (content: React.ReactNode) => void };
 	private newestMessageRef: { current: ChatMessage | undefined };
 
 	constructor(params: {
-		request: AbstractXRequestClass | (() => AbstractXRequestClass);
+		request: ChatRequest | (() => ChatRequest);
 		selectedModelRef: { current: string | undefined };
 		getAppSettings: () => AppSettingsData;
 		enableThinkingRef: { current: boolean };
 		getCustomModelRequest: (
 			model: string,
-		) => { request: AbstractXRequestClass; config: ChatApiConfig } | undefined;
+		) => { request: ChatRequest; config: ChatApiConfig } | undefined;
 		intl: IntlShape;
 		messageApi: { error: (content: React.ReactNode) => void };
 		newestMessageRef: { current: ChatMessage | undefined };
@@ -355,7 +369,7 @@ class SnowShotChatProvider extends AbstractChatProvider<
 	}
 
 	transformParams(
-		_requestParams: Partial<ChatRequestBody>,
+		_requestParams: Partial<ChatRequestInput>,
 		_options: XRequestOptions,
 	): ChatRequestBody {
 		const inputMessages = this.getMessages().slice(-20);
@@ -441,12 +455,14 @@ class SnowShotChatProvider extends AbstractChatProvider<
 		};
 	}
 
-	transformLocalMessage(requestParams: Partial<ChatRequestBody>): ChatMessage {
+	transformLocalMessage(requestParams: Partial<ChatRequestInput>): ChatMessage {
 		const { message } = requestParams as { message?: ChatMessage };
 		return (message ?? { content: "", role: "user" }) as ChatMessage;
 	}
 
-	transformMessage(info: TransformMessage): ChatMessage {
+	transformMessage(
+		info: TransformMessage<ChatMessage, SSEOutput>,
+	): ChatMessage {
 		const { originMessage, chunk } = info;
 		if (chunk && "code" in chunk && "message" in chunk) {
 			const chatResponse = ServiceResponse.serviceError(
@@ -631,7 +647,7 @@ const Chat = () => {
 	const newestMessage = useRef<ChatMessage>(undefined);
 
 	const [messageHistory, setMessageHistory, messageHistoryRef] = useStateRef<
-		Record<string, MessageInfo[]>
+		Record<string, ChatMessageInfo[]>
 	>({});
 
 	const [sessionList, setSessionList, sessionListRef] = useStateRef<
@@ -694,9 +710,15 @@ const Chat = () => {
 
 	const { messages, onRequest, setMessages, abort, isRequesting } = useXChat<
 		ChatMessage,
+		ChatMessage,
+		ChatRequestInput,
 		SSEOutput
 	>({
-		provider: provider as AbstractChatProvider,
+		provider: provider as AbstractChatProvider<
+			ChatMessage,
+			ChatRequestInput,
+			SSEOutput
+		>,
 		requestFallback: (_requestParams, info): ChatMessage => {
 			const { error } = info;
 
@@ -884,7 +906,7 @@ const Chat = () => {
 							// In future versions, the sessionId capability will be added to resolve this problem.
 							setTimeout(() => {
 								setCurSession(val);
-								setMessages((messageHistory?.[val] || []) as MessageInfo[]);
+								setMessages(messageHistory?.[val] || []);
 							}, 100);
 
 							autoScrollRef.current = true;
@@ -1061,13 +1083,13 @@ const Chat = () => {
 				return b[1].session.key.localeCompare(a[1].session.key);
 			});
 			const sessionList = [];
-			const messageHistory = {} as Record<string, MessageInfo[]>;
+			const messageHistory = {} as Record<string, ChatMessageInfo[]>;
 			for (const [key, value] of chatHistory) {
 				sessionList.push({
 					...value.session,
 					isDefaultSession: false,
 				});
-				messageHistory[key] = value.messages;
+				messageHistory[key] = value.messages as ChatMessageInfo[];
 			}
 			setSessionList(sessionList);
 			setMessageHistory(messageHistory);
@@ -1143,7 +1165,7 @@ const Chat = () => {
 		</div>
 	);
 
-	const messagesRef = useRef<MessageInfo[]>([]);
+	const messagesRef = useRef<ChatMessageInfo[]>([]);
 	useEffect(() => {
 		messagesRef.current = messages;
 	}, [messages]);
@@ -1399,7 +1421,7 @@ const Chat = () => {
 	);
 
 	const updateHistory = useCallback(
-		(msgList: MessageInfo[] | undefined) => {
+		(msgList: ChatMessageInfo[] | undefined) => {
 			const currentSession = curSessionRef.current;
 			if (msgList && msgList.length > 0 && currentSession) {
 				setMessageHistory((prev) => ({

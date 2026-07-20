@@ -84,12 +84,11 @@ fn read_boost_process_priority_setting() -> bool {
 #[cfg(target_os = "windows")]
 fn resolve_config_dir(identifier: &str) -> std::path::PathBuf {
     // 便携版：exe 所在目录存在 `__portable` 标记文件
-    if let Ok(exe_path) = std::env::current_exe() {
-        if let Some(exe_dir) = exe_path.parent() {
-            if exe_dir.join("__portable").exists() {
-                return exe_dir.join("configs");
-            }
-        }
+    if let Ok(exe_path) = std::env::current_exe()
+        && let Some(exe_dir) = exe_path.parent()
+        && exe_dir.join("__portable").exists()
+    {
+        return exe_dir.join("configs");
     }
 
     // 全局 app data 配置目录基址（即 tauri 的 app_config_dir）

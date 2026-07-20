@@ -171,9 +171,19 @@ export const useDragElement = (
 		) => ElementRect,
 	) => UpdateElementPositionResult;
 	reset: () => void;
-	onMouseDown: (event: React.PointerEvent<HTMLDivElement> | PointerEvent) => void;
+	onMouseDown: (
+		event:
+			| React.PointerEvent<HTMLDivElement>
+			| React.MouseEvent<HTMLDivElement>
+			| PointerEvent
+			| MouseEvent,
+	) => void;
 	onMouseMove: (
-		event: React.PointerEvent<HTMLDivElement> | PointerEvent,
+		event:
+			| React.PointerEvent<HTMLDivElement>
+			| React.MouseEvent<HTMLDivElement>
+			| PointerEvent
+			| MouseEvent,
 		element: HTMLElement,
 		contentScale?: number,
 		calculatedBoundaryRect?: (
@@ -287,7 +297,13 @@ export const useDragElement = (
 	}, []);
 
 	const onMouseDown = useCallback(
-		(event: React.PointerEvent<HTMLDivElement> | PointerEvent) => {
+		(
+			event:
+				| React.PointerEvent<HTMLDivElement>
+				| React.MouseEvent<HTMLDivElement>
+				| PointerEvent
+				| MouseEvent,
+		) => {
 			draggingRef.current = true;
 			setDragging(true);
 			mouseOriginPositionRef.current = new MousePosition(

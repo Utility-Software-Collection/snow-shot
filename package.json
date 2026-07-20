@@ -1,6 +1,6 @@
 {
 	"name": "snow-shot",
-	"version": "0.9.0",
+	"version": "0.9.0-beta",
 	"author": "mg-chao",
 	"homepage": "https://github.com/mg-chao/snow-shot",
 	"repository": {
@@ -19,8 +19,8 @@
 		"dev": "rsbuild dev --port 8083",
 		"tauri": "tauri",
 		"preview": "rsbuild preview",
-		"lint": "biome format ./ && biome check ./",
-		"lint:fix": "biome format ./ --write && biome check --write ./src",
+		"lint": "biome ci ./",
+		"lint:fix": "biome check --write ./",
 		"update:excalidraw": "cd ../excalidraw && rimraf ./packages/excalidraw/dist && yarn build:packages && cd ../snow-shot && pnpm update @mg-chao/excalidraw",
 		"dev:rsdoctor": "cross-env RSDOCTOR=true rsbuild dev",
 		"build:rsdoctor": "cross-env RSDOCTOR=true rsbuild build",

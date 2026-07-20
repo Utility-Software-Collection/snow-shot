@@ -7,6 +7,6 @@
         <key>NSMicrophoneUsageDescription</key>
         <string>Request microphone access for screen recording</string>
         <key>NSScreenCaptureUsageDescription</key>
-        <string>Request screen capture access for screenshot</string>
+        <string>Request screen capture access for screenshots and system audio recording</string>
     </dict>
 </plist>
