@@ -434,10 +434,18 @@ export const VideoRecordPage: React.FC = () => {
 				setVideoRecordState(state);
 			},
 		);
+		const openPlaybackListenerId = addListener("open-video-playback", () => {
+			getCurrentWindow().hide();
+		});
+		const closePlaybackListenerId = addListener("close-video-playback", () => {
+			init(selectRectRef.current ?? selectRect);
+		});
 
 		return () => {
 			removeListener(listenerId);
 			removeListener(changeVideoRecordStateListenerId);
+			removeListener(openPlaybackListenerId);
+			removeListener(closePlaybackListenerId);
 		};
 	}, [addListener, init, removeListener, setVideoRecordState]);
 

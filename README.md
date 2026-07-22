@@ -27,7 +27,7 @@
 
 # 重要的事
 
-> 原作在本项目主分支的提交截止于[2025年11月8日](https://github.com/mg-chao/snow-shot/commit/c7f2d9fe3114ad0dba6e5efdfe4bd8ecbc1f1de3)，在此后的各个渠道都无法联系到原作者
+> 原作在本项目主分支的提交截止于[2025年11月8日](https://github.com/mg-chao/snow-shot/commit/c7f2d9fe3114ad0dba6e5efdfe4bd8ecbc1f1de3)，原作目前暂停维护
 >
 >本项目Fork于 [xiaofeiTM233的新维护分支](https://github.com/xiaofeiTM233/snow-shot) ，xiaofei的分支在原作的基础上，进行了大量优化和改进，并添加了新的功能，以提供更好的用户体验
 >关于xiaofei分支的介绍可以前往 [此处](https://github.com/mg-chao/snow-shot/issues/1000) 查看

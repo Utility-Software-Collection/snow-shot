@@ -47,3 +47,6 @@ tsconfig.tsbuildinfo
 
 # AI
 .codex*
+
+# build
+B & F.txt
