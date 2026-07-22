@@ -105,6 +105,68 @@ pub async fn video_record_stop(
     }
 }
 
+/// Export a contiguous portion of an already-recorded video for the playback UI.
+#[command]
+pub async fn video_record_export(
+    video_service: tauri::State<'_, Mutex<VideoRecordService>>,
+    input_file: String,
+    output_file: String,
+    start_time: f64,
+    end_time: f64,
+    format: String,
+) -> Result<String, String> {
+    if !start_time.is_finite() || !end_time.is_finite() || end_time <= start_time {
+        return Err("Invalid playback trim range".to_string());
+    }
+
+    let service = video_service.lock().await;
+    let mut command = service.get_ffmpeg_command();
+    command
+        .arg("-y")
+        .arg("-ss")
+        .arg(format!("{start_time:.3}"))
+        .arg("-to")
+        .arg(format!("{end_time:.3}"))
+        .arg("-i")
+        .arg(&input_file);
+
+    match format.as_str() {
+        "gif" => {
+            command
+                .arg("-vf")
+                .arg("fps=15,scale=iw:-2:flags=lanczos")
+                .arg("-loop")
+                .arg("0");
+        }
+        "webp" => {
+            command
+                .arg("-vf")
+                .arg("fps=15,scale=iw:-2:flags=lanczos")
+                .arg("-loop")
+                .arg("0")
+                .arg("-an");
+        }
+        "mp4" => {
+            command.arg("-c:v").arg("libx264").arg("-c:a").arg("aac");
+        }
+        _ => return Err("Unsupported playback export format".to_string()),
+    }
+
+    command.arg(&output_file);
+    let mut child = command
+        .spawn()
+        .map_err(|error| format!("Failed to start export: {error}"))?;
+    let status = child
+        .wait()
+        .map_err(|error| format!("Failed to export recording: {error}"))?;
+
+    if !status.success() || !std::path::Path::new(&output_file).exists() {
+        return Err("Recording export failed".to_string());
+    }
+
+    Ok(output_file)
+}
+
 /// 暂停视频录制
 #[command]
 pub async fn video_record_pause(

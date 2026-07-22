@@ -56,6 +56,23 @@ export const videoRecordStop = async (
 	return result;
 };
 
+export const videoRecordExport = async (
+	inputFile: string,
+	outputFile: string,
+	startTime: number,
+	endTime: number,
+	format: "mp4" | "gif" | "webp",
+) => {
+	const result = await invoke<string>("video_record_export", {
+		inputFile,
+		outputFile,
+		startTime,
+		endTime,
+		format,
+	});
+	return result;
+};
+
 export const videoRecordPause = async () => {
 	const result = await invoke("video_record_pause");
 	return result;
