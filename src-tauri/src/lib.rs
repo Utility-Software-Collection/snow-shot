@@ -428,6 +428,7 @@ pub fn run() {
             scroll_screenshot::scroll_screenshot_clear,
             video_record::video_record_start,
             video_record::video_record_stop,
+            video_record::video_record_export,
             video_record::video_record_pause,
             video_record::video_record_resume,
             video_record::video_record_kill,

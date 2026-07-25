@@ -48,3 +48,9 @@ tsconfig.tsbuildinfo
 
 # AI
 .codex*
+<<<<<<< HEAD
+=======
+
+# build
+B & F.txt
+>>>>>>> a621cc8c950a595813ce52ff567af55333353f12

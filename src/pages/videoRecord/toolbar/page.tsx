@@ -7,10 +7,12 @@ import {
 	HolderOutlined,
 	PauseOutlined,
 } from "@ant-design/icons";
+import { emit } from "@tauri-apps/api/event";
 import { join as joinPath } from "@tauri-apps/api/path";
 import {
 	type Window as AppWindow,
 	getCurrentWindow,
+	PhysicalSize,
 } from "@tauri-apps/api/window";
 import * as dialog from "@tauri-apps/plugin-dialog";
 import { openPath } from "@tauri-apps/plugin-opener";
@@ -85,6 +87,7 @@ import type { VideoRecordWindowInfo } from "@/utils/types";
 import { setWindowRect } from "@/utils/window";
 import { zIndexs } from "@/utils/zIndex";
 import { getVideoRecordParams, VideoRecordState } from "../extra";
+import { VideoRecordPlayback } from "../playback";
 
 dayjs.extend(duration);
 
@@ -238,6 +241,7 @@ export const VideoRecordToolbarPage: React.FC = () => {
 		enableSystemAudio: false,
 	});
 	const durationRef = useRef(0);
+	const durationStartedAtRef = useRef<number | undefined>(undefined);
 
 	const durationTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -259,12 +263,22 @@ export const VideoRecordToolbarPage: React.FC = () => {
 		}
 	}, []);
 
-	const startDurationTimer = useCallback(() => {
-		durationTimer.current = setInterval(() => {
-			durationRef.current += 0.1;
-			updateDurationFormat();
-		}, 100);
+	const updateDuration = useCallback(() => {
+		const startedAt = durationStartedAtRef.current;
+		if (startedAt === undefined) {
+			return;
+		}
+
+		durationRef.current = (performance.now() - startedAt) / 1000;
+		updateDurationFormat();
 	}, [updateDurationFormat]);
+
+	const startDurationTimer = useCallback(() => {
+		durationStartedAtRef.current =
+			performance.now() - durationRef.current * 1000;
+		updateDuration();
+		durationTimer.current = setInterval(updateDuration, 250);
+	}, [updateDuration]);
 
 	useEffect(() => {
 		updateDurationFormat();
@@ -286,10 +300,55 @@ export const VideoRecordToolbarPage: React.FC = () => {
 	const [stopRecordLoading, setStopRecordLoading] = useState(false);
 	const [settingLoading, setSettingLoading] = useState(true);
 	const [openFolderLoading, setOpenFolderLoading] = useState(false);
+	const [playbackFile, setPlaybackFile] = useState<string | undefined>(
+		undefined,
+	);
 
 	const [getAppSettings] = useStateSubscriber(AppSettingsPublisher, undefined);
 	const { updateAppSettings } = useContext(AppSettingsActionContext);
 	const { isReadyStatus } = usePluginServiceContext();
+	const openPlayback = useCallback(async (filePath: string) => {
+		setPlaybackFile(filePath);
+		await emit("open-video-playback");
+
+		const appWindow = getCurrentWindow();
+		const scaleFactor = window.devicePixelRatio;
+		const playbackWidth = Math.round(860 * scaleFactor);
+		const playbackHeight = Math.round(700 * scaleFactor);
+		const selectRect = selectRectRef.current;
+
+		if (selectRect) {
+			const monitorBounds = await getMonitorsBoundingBox(selectRect, true);
+			const monitorRect = monitorBounds.rect;
+			const centerX = Math.round(
+				(monitorRect.min_x + monitorRect.max_x - playbackWidth) / 2,
+			);
+			const centerY = Math.round(
+				(monitorRect.min_y + monitorRect.max_y - playbackHeight) / 2,
+			);
+			const maxX = Math.max(
+				monitorRect.min_x,
+				monitorRect.max_x - playbackWidth,
+			);
+			const maxY = Math.max(
+				monitorRect.min_y,
+				monitorRect.max_y - playbackHeight,
+			);
+			const targetX = Math.min(Math.max(centerX, monitorRect.min_x), maxX);
+			const targetY = Math.min(Math.max(centerY, monitorRect.min_y), maxY);
+
+			await setWindowRect(appWindow, {
+				min_x: targetX,
+				min_y: targetY,
+				max_x: targetX + playbackWidth,
+				max_y: targetY + playbackHeight,
+			});
+		} else {
+			await appWindow.setSize(new PhysicalSize(playbackWidth, playbackHeight));
+		}
+
+		await appWindow.show();
+	}, []);
 	const resizeWindowForMicrophoneDropdown = useCallback(async () => {
 		const selectRect = selectRectRef.current;
 		if (!selectRect) {
@@ -425,12 +484,18 @@ export const VideoRecordToolbarPage: React.FC = () => {
 	}, [intl, isReadyStatus]);
 
 	const stopRecord = useCallback(
-		async (convertToGif: boolean): Promise<string | null | undefined> => {
+		async (
+			convertToGif: boolean,
+			openPlaybackAfterStop = true,
+		): Promise<string | null | undefined> => {
 			setStopRecordLoading(true);
 
 			// 进度改为编码的耗时
+			stopDurationTimer();
 			durationRef.current = 0;
+			durationStartedAtRef.current = undefined;
 			updateDurationFormat();
+			startDurationTimer();
 
 			let outputFile: string | null | undefined;
 			try {
@@ -446,26 +511,32 @@ export const VideoRecordToolbarPage: React.FC = () => {
 					gifMaxWidth,
 					gifMaxHeight,
 				);
+				if (outputFile && openPlaybackAfterStop) {
+					await openPlayback(outputFile);
+				}
 
 				setVideoRecordState(VideoRecordState.Idle);
 				recordingAudioEnabledRef.current = {
 					enableMicrophone: false,
 					enableSystemAudio: false,
 				};
-
+			} catch (error) {
+				appError("[VideoRecordToolbarPage] stopRecord error", error);
+			} finally {
 				stopDurationTimer();
-
 				durationRef.current = 0;
+				durationStartedAtRef.current = undefined;
 				updateDurationFormat();
-			} catch {}
-
-			setStopRecordLoading(false);
+				setStopRecordLoading(false);
+			}
 
 			return outputFile;
 		},
 		[
 			getAppSettings,
+			openPlayback,
 			setVideoRecordState,
+			startDurationTimer,
 			stopDurationTimer,
 			updateDurationFormat,
 		],
@@ -599,6 +670,12 @@ export const VideoRecordToolbarPage: React.FC = () => {
 		}
 
 		setStartRecordLoading(true);
+		stopDurationTimer();
+		durationRef.current = 0;
+		durationStartedAtRef.current = undefined;
+		updateDurationFormat();
+		startDurationTimer();
+		setVideoRecordState(VideoRecordState.Recording);
 
 		try {
 			const { width: videoMaxWidth, height: videoMaxHeight } =
@@ -634,13 +711,16 @@ export const VideoRecordToolbarPage: React.FC = () => {
 				enableMicrophone,
 				enableSystemAudio,
 			};
-			setVideoRecordState(VideoRecordState.Recording);
-
+		} catch (error) {
 			stopDurationTimer();
 			durationRef.current = 0;
+			durationStartedAtRef.current = undefined;
 			updateDurationFormat();
-			startDurationTimer();
-		} catch (error) {
+			setVideoRecordState(VideoRecordState.Idle);
+			recordingAudioEnabledRef.current = {
+				enableMicrophone: false,
+				enableSystemAudio: false,
+			};
 			appError("[VideoRecordToolbarPage] startRecord error", error);
 			const errorDetail =
 				error instanceof Error ? error.message : String(error);
@@ -680,7 +760,7 @@ export const VideoRecordToolbarPage: React.FC = () => {
 				}
 			}
 
-			stopRecord(convertToGif).then((outputFile) => {
+			stopRecord(convertToGif, false).then((outputFile) => {
 				if (outputFile) {
 					clipboard.writeFiles([outputFile]);
 				}
@@ -751,6 +831,25 @@ export const VideoRecordToolbarPage: React.FC = () => {
 		}
 	}, [isReadyStatus]);
 
+	if (playbackFile) {
+		return (
+			<VideoRecordPlayback
+				filePath={playbackFile}
+				onClose={() => {
+					void closeVideoRecordWindow();
+				}}
+				onRecordAgain={() => {
+					setPlaybackFile(undefined);
+					void emit("close-video-playback");
+					const selectRect = selectRectRef.current;
+					if (selectRect) {
+						void init(selectRect);
+					}
+				}}
+			/>
+		);
+	}
+
 	return (
 		<div
 			className={`video-record-toolbar-container ${
@@ -772,8 +871,10 @@ export const VideoRecordToolbarPage: React.FC = () => {
 
 						{videoRecordState === VideoRecordState.Idle && (
 							<Button
-								loading={startRecordLoading}
-								disabled={videoRecordState !== VideoRecordState.Idle}
+								disabled={
+									startRecordLoading ||
+									videoRecordState !== VideoRecordState.Idle
+								}
 								onClick={startRecord}
 								icon={
 									<StartRecordIcon
@@ -818,6 +919,7 @@ export const VideoRecordToolbarPage: React.FC = () => {
 										.then(() => {
 											setVideoRecordState(VideoRecordState.Paused);
 
+											updateDuration();
 											stopDurationTimer();
 										})
 										.finally(() => {
@@ -984,7 +1086,7 @@ export const VideoRecordToolbarPage: React.FC = () => {
 
 						<Button
 							onClick={() => {
-								stopRecord(false).then(() => {
+								stopRecord(false, false).then(() => {
 									closeVideoRecordWindow();
 								});
 							}}
