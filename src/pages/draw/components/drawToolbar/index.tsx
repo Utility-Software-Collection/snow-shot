@@ -1002,7 +1002,10 @@ const DrawToolbarCore: React.FC<DrawToolbarProps> = ({
 							{/* 转到翻译页 */}
 							<ToolButton
 								hidden={
-									!(ocrServiceReady && isReadyStatus?.(PLUGIN_ID_TRANSLATE))
+									!(
+										isReadyStatus?.(PLUGIN_ID_RAPID_OCR) &&
+										isReadyStatus?.(PLUGIN_ID_TRANSLATE)
+									)
 								}
 								componentKey={DrawToolbarKeyEventKey.OpenTranslationTool}
 								icon={<TranslationIcon style={{ fontSize: "0.86em" }} />}

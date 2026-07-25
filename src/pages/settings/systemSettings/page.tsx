@@ -35,7 +35,7 @@ import {
 	useState,
 } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
-import { restartWithAdmin } from "@/commands/core";
+import { restartWithAdmin, setRememberWindowGeometry } from "@/commands/core";
 import { createLocalConfigDir, getAppConfigBaseDir } from "@/commands/file";
 import { ContentWrap } from "@/components/contentWrap";
 import { GroupTitle } from "@/components/groupTitle";
@@ -54,6 +54,7 @@ import {
 	AppSettingsRenderEngine,
 	HdrColorAlgorithm,
 	HistoryValidDuration,
+	RunLogLevel,
 } from "@/types/appSettings";
 import { clearAllConfig } from "@/utils/appConfig";
 import { clearAllAppStore } from "@/utils/appStore";
@@ -108,6 +109,10 @@ export const SystemSettingsPage = () => {
 						settings[AppSettingsGroup.SystemCommon]
 				) {
 					commonForm.setFieldsValue(settings[AppSettingsGroup.SystemCommon]);
+					// 同步「记住窗口位置大小」开关到 Rust
+					setRememberWindowGeometry(
+						settings[AppSettingsGroup.SystemCommon].rememberWindowGeometry,
+					);
 				}
 
 				if (
@@ -273,6 +278,35 @@ export const SystemSettingsPage = () => {
 		];
 	}, [intl]);
 
+	const runLogLevelOptions = useMemo((): SelectProps["options"] => {
+		return [
+			{
+				label: "Off",
+				value: RunLogLevel.Off,
+			},
+			{
+				label: "Error",
+				value: RunLogLevel.Error,
+			},
+			{
+				label: "Warn",
+				value: RunLogLevel.Warn,
+			},
+			{
+				label: "Info",
+				value: RunLogLevel.Info,
+			},
+			{
+				label: "Debug",
+				value: RunLogLevel.Debug,
+			},
+			{
+				label: "Trace",
+				value: RunLogLevel.Trace,
+			},
+		];
+	}, []);
+
 	const [currentPlatform] = usePlatform();
 
 	const [isAdmin, setIsAdmin] = useStateRef<boolean>(false);
@@ -348,7 +382,7 @@ export const SystemSettingsPage = () => {
 							</ProForm.Item>
 						</Col>
 						<Col span={12}>
-							<ProForm.Item
+							<ProFormSelect
 								label={
 									<IconLabel
 										label={
@@ -357,6 +391,19 @@ export const SystemSettingsPage = () => {
 									/>
 								}
 								name="runLog"
+								options={runLogLevelOptions}
+							/>
+						</Col>
+						<Col span={12}>
+							<ProForm.Item
+								label={
+									<IconLabel
+										label={
+											<FormattedMessage id="settings.systemSettings.commonSettings.rememberWindowGeometry" />
+										}
+									/>
+								}
+								name="rememberWindowGeometry"
 								valuePropName="checked"
 							>
 								<Switch />

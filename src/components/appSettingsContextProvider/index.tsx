@@ -50,6 +50,7 @@ import {
 	type HdrColorAlgorithm,
 	type HistoryValidDuration,
 	OcrDetectAfterAction,
+	RunLogLevel,
 	type TrayIconClickAction,
 	type TrayIconDefaultIcon,
 	type VideoMaxSize,
@@ -790,14 +791,19 @@ const AppSettingsContextProviderCore: React.FC<{
 							: (prevSettings?.autoCheckVersion ??
 								defaultAppSettingsData[group].autoCheckVersion),
 					runLog:
-						typeof newSettings?.runLog === "boolean"
-							? newSettings.runLog
+						typeof newSettings?.runLog === "string"
+							? (newSettings.runLog as RunLogLevel)
 							: (prevSettings?.runLog ?? defaultAppSettingsData[group].runLog),
 					boostProcessPriority:
 						typeof newSettings?.boostProcessPriority === "boolean"
 							? newSettings.boostProcessPriority
 							: (prevSettings?.boostProcessPriority ??
 								defaultAppSettingsData[group].boostProcessPriority),
+					rememberWindowGeometry:
+						typeof newSettings?.rememberWindowGeometry === "boolean"
+							? newSettings.rememberWindowGeometry
+							: (prevSettings?.rememberWindowGeometry ??
+								defaultAppSettingsData[group].rememberWindowGeometry),
 				};
 			} else if (group === AppSettingsGroup.SystemChat) {
 				newSettings = newSettings as AppSettingsData[typeof group];

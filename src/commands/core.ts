@@ -228,9 +228,9 @@ export const isAdmin = async () => {
 	return result;
 };
 
-export const setRunLog = async (enable: boolean) => {
+export const setRunLog = async (level: string) => {
 	const result = await invoke<void>("set_run_log", {
-		enable,
+		level,
 	});
 	return result;
 };
@@ -273,4 +273,8 @@ export const setWindowRect = async (
 export const getCommitSha = async () => {
 	const result = await invoke<string>("get_commit_sha");
 	return result;
+};
+
+export const setRememberWindowGeometry = async (remember: boolean) => {
+	await invoke("set_remember_window_geometry", { remember });
 };

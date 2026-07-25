@@ -19,6 +19,7 @@ import {
 	KeyDisplayDirection,
 	OcrDetectAfterAction,
 	OcrModel,
+	RunLogLevel,
 	TrayIconClickAction,
 	TrayIconDefaultIcon,
 	VideoMaxSize,
@@ -133,8 +134,9 @@ export const defaultAppSettingsData: AppSettingsData = {
 	[AppSettingsGroup.SystemCommon]: {
 		autoStart: true,
 		autoCheckVersion: true,
-		runLog: false,
+		runLog: RunLogLevel.Warn,
 		boostProcessPriority: false,
+		rememberWindowGeometry: true,
 	},
 	[AppSettingsGroup.SystemChat]: {
 		maxTokens: 4096,

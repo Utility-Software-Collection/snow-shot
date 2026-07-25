@@ -44,7 +44,8 @@ pub async fn capture_current_monitor(
             "png" => snow_shot_app_utils::ImageEncoder::Png,
             _ => snow_shot_app_utils::ImageEncoder::Webp,
         },
-    );
+    )
+    .map_err(|e| e.to_string())?;
 
     Ok(Response::new(image_buffer))
 }
@@ -79,8 +80,8 @@ pub async fn capture_all_monitors(
         )
         .await?;
 
-        let image_buffer =
-            snow_shot_app_utils::encode_image(&image, snow_shot_app_utils::ImageEncoder::Png);
+        let image_buffer = snow_shot_app_utils::encode_image(&image, snow_shot_app_utils::ImageEncoder::Png)
+            .map_err(|e| e.to_string())?;
 
         Ok(Response::new(image_buffer))
     }
@@ -131,8 +132,8 @@ pub async fn capture_all_monitors(
             // 通过 SharedBuffer 传输的特殊标记
             Ok(Response::new(vec![1]))
         } else {
-            let image_buffer =
-                snow_shot_app_utils::encode_image(&image, snow_shot_app_utils::ImageEncoder::Png);
+            let image_buffer = snow_shot_app_utils::encode_image(&image, snow_shot_app_utils::ImageEncoder::Png)
+                .map_err(|e| e.to_string())?;
 
             Ok(Response::new(image_buffer))
         }
@@ -285,8 +286,8 @@ pub async fn capture_focused_window(
     }
 
     // 编码图像为 PNG 格式并返回
-    let image_buffer =
-        snow_shot_app_utils::encode_image(&image, snow_shot_app_utils::ImageEncoder::Png);
+    let image_buffer = snow_shot_app_utils::encode_image(&image, snow_shot_app_utils::ImageEncoder::Png)
+        .map_err(|e| e.to_string())?;
 
     Ok(Response::new(image_buffer))
 }
@@ -696,8 +697,20 @@ pub async fn capture_full_screen(
     let active_monitor_crop_region_height =
         (active_monitor_crop_region.max_y - active_monitor_crop_region.min_y) as usize;
 
-    let mut active_monitor_image_bytes =
-        vec![0; active_monitor_crop_region_width * active_monitor_crop_region_height * 3];
+    // 裁剪区域宽高为零时无法编码（Zero width not allowed），直接返回错误，避免 panic
+    if active_monitor_crop_region_width == 0 || active_monitor_crop_region_height == 0 {
+        return Err(String::from(
+            "[capture_full_screen] active monitor crop region has zero width or height",
+        ));
+    }
+
+    let mut active_monitor_image_bytes = unsafe {
+        let mut bytes = Vec::with_capacity(
+            active_monitor_crop_region_width * active_monitor_crop_region_height * 3,
+        );
+        bytes.set_len(active_monitor_crop_region_width * active_monitor_crop_region_height * 3);
+        bytes
+    };
 
     let all_monitor_image_width = all_monitors_image.width() as usize;
     let base_index =
@@ -734,10 +747,8 @@ pub async fn capture_full_screen(
     };
 
     // 编码图像为 PNG 格式
-    let image_buffer = snow_shot_app_utils::encode_image(
-        &active_monitor_image,
-        snow_shot_app_utils::ImageEncoder::Png,
-    );
+    let image_buffer = snow_shot_app_utils::encode_image(&active_monitor_image, snow_shot_app_utils::ImageEncoder::Png)
+        .map_err(|e| e.to_string())?;
 
     // 写入到截图历史
     let capture_history_file_path = PathBuf::from(capture_history_file_path);

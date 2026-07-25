@@ -32,6 +32,7 @@ dist/
 
 # misc
 .DS_Store
+B & F.txt
 *.pem
 
 # debug

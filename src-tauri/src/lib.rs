@@ -32,7 +32,100 @@ use snow_shot_app_services::resize_window_service;
 use snow_shot_app_services::video_record_service;
 use snow_shot_app_shared::EnigoManager;
 use snow_shot_global_state::{CaptureState, ReadClipboardState, WebViewSharedBufferState};
+use serde::{Deserialize, Serialize};
 use snow_shot_plugin_service::plugin_service;
+
+/// 主窗口几何信息（outer size / outer position）。
+///
+/// 用 outer 而非 inner，避免无边框窗口（`set_decorations(false)` 自定义标题栏）
+/// 下 inner/outer 不一致导致恢复出的尺寸比例失真（重启后变成方形/高度异常）。
+#[derive(Serialize, Deserialize, Default, Clone)]
+struct MainWindowGeometry {
+    width: u32,
+    height: u32,
+    x: i32,
+    y: i32,
+}
+
+/// 是否记住关闭时的窗口位置和大小（由前端设置开关控制）。
+static REMEMBER_WINDOW_GEOMETRY: std::sync::OnceLock<std::sync::Mutex<bool>> =
+    std::sync::OnceLock::new();
+
+fn remember_window_geometry_enabled() -> bool {
+    *REMEMBER_WINDOW_GEOMETRY
+        .get_or_init(|| std::sync::Mutex::new(true))
+        .lock()
+        .unwrap()
+}
+
+fn set_remember_window_geometry_enabled(enabled: bool) {
+    *REMEMBER_WINDOW_GEOMETRY
+        .get_or_init(|| std::sync::Mutex::new(true))
+        .lock()
+        .unwrap() = enabled;
+}
+
+/// 读取主窗口当前 outer 尺寸/位置并落盘。
+fn save_main_window_geometry(app: &tauri::AppHandle) {
+    // 开关关闭时不保存，确保关闭软件后下次启动恢复默认尺寸/位置
+    if !remember_window_geometry_enabled() {
+        return;
+    }
+    let Some(window) = app.get_webview_window("main") else {
+        return;
+    };
+    let (size, pos) = match (window.outer_size(), window.outer_position()) {
+        (Ok(s), Ok(p)) => (s, p),
+        _ => return,
+    };
+    let geo = MainWindowGeometry {
+        width: size.width,
+        height: size.height,
+        x: pos.x,
+        y: pos.y,
+    };
+    if let Ok(dir) = app.path().app_config_dir() {
+        let _ = std::fs::create_dir_all(&dir);
+        if let Ok(content) = serde_json::to_string(&geo) {
+            let _ = std::fs::write(dir.join("main-window-geometry.json"), content);
+        }
+    }
+}
+
+/// 恢复主窗口上一次保存的尺寸/位置（在 setup 阶段、decorations 确定后调用）。
+fn restore_main_window_geometry(app: &tauri::AppHandle) {
+    let Some(window) = app.get_webview_window("main") else {
+        return;
+    };
+    let Ok(dir) = app.path().app_config_dir() else {
+        return;
+    };
+    let Ok(content) = std::fs::read_to_string(dir.join("main-window-geometry.json")) else {
+        return;
+    };
+    let Ok(geo) = serde_json::from_str::<MainWindowGeometry>(&content) else {
+        return;
+    };
+    if geo.width > 0 && geo.height > 0 {
+        let _ = window.set_size(tauri::PhysicalSize::new(geo.width, geo.height));
+        let _ = window.set_position(tauri::PhysicalPosition::new(geo.x, geo.y));
+    }
+}
+
+/// 前端开关「记住关闭时窗口的位置和大小」变化时调用。
+/// 关闭时删除已保存的几何文件，使下次启动恢复默认。
+#[tauri::command]
+fn set_remember_window_geometry(app: tauri::AppHandle, remember: Option<bool>) {
+    // 前端旧配置/未加载时可能传入 undefined，JSON 序列化后该 key 被丢弃，
+    // 这里回退到默认 true，避免命令因缺少必需参数而报错。
+    let remember = remember.unwrap_or(true);
+    set_remember_window_geometry_enabled(remember);
+    if !remember {
+        if let Ok(dir) = app.path().app_config_dir() {
+            let _ = std::fs::remove_file(dir.join("main-window-geometry.json"));
+        }
+    }
+}
 
 #[cfg(feature = "dhat-heap")]
 pub static PROFILER: std::sync::LazyLock<Mutex<Option<dhat::Profiler>>> =
@@ -65,8 +158,10 @@ pub fn run() {
 
     let file_cache_service = Arc::new(file_cache_service::FileCacheService::new());
 
-    let enable_run_log = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
-    let enable_run_log_clone = enable_run_log.clone();
+	let enable_run_log = std::sync::Arc::new(std::sync::atomic::AtomicU8::new(
+		log::LevelFilter::Warn as u8,
+	));
+	let enable_run_log_clone = enable_run_log.clone();
 
     let plugin_service = Arc::new(plugin_service::PluginService::new());
 
@@ -81,7 +176,9 @@ pub fn run() {
 
     use tauri_plugin_log::{Target, TargetKind};
 
-    // let current_date = chrono::Local::now().format("%Y-%m-%d").to_string();
+    // 每次启动用时间戳生成独立日志文件名
+    let launch_tag = utc_timestamp_tag();
+    let log_file_name = format!("snow-shot-{launch_tag}");
 
     // log 文件可能因为某些异常情况不断输出，造成日志文件过大
     // 先在 release 下屏蔽日志输出
@@ -89,30 +186,22 @@ pub fn run() {
     let log_targets: Vec<Target> = if cfg!(debug_assertions) {
         vec![
             Target::new(TargetKind::Stdout),
-            Target::new(TargetKind::LogDir { file_name: None }),
+            Target::new(TargetKind::LogDir {
+                file_name: Some(log_file_name.clone()),
+            }),
             Target::new(TargetKind::Webview),
         ]
     } else {
-        vec![Target::new(TargetKind::LogDir { file_name: None })]
+        vec![Target::new(TargetKind::LogDir {
+            file_name: Some(log_file_name),
+        })]
     };
-    let log_level = if cfg!(debug_assertions) {
-        log::LevelFilter::Debug
-    } else {
-        log::LevelFilter::Info
-    };
+    // 将插件基础级别设为最详细，由下方 filter 根据用户选择的运行日志级别进行实际过滤
+    let log_level = log::LevelFilter::Trace;
 
     #[allow(unused_mut)]
     let mut app_builder = tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(
-            tauri_plugin_window_state::Builder::new()
-                .with_state_flags(
-                    tauri_plugin_window_state::StateFlags::SIZE
-                        | tauri_plugin_window_state::StateFlags::POSITION,
-                )
-                .with_filter(|label| label == "main")
-                .build(),
-        )
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
             let app_window = app.get_webview_window("main").expect("no main window");
@@ -142,20 +231,39 @@ pub fn run() {
                 .timezone_strategy(tauri_plugin_log::TimezoneStrategy::UseLocal)
                 .targets(log_targets)
                 .level(log_level)
-                .filter(move |_| {
+                .filter(move |metadata| {
+                    // 屏蔽 xcap 在枚举窗口时，对某些系统/受保护进程
+                    // 调用 GetFileVersionInfoSizeW / GetModuleBaseNameW 失败产生的无害 ERROR 日志。
+                    // 错误码 1813（无版本资源）与 5（拒绝访问）属于 Windows 上枚举窗口时的正常情况，
+                    // xcap 会忽略并继续枚举，不影响截图与窗口识别功能，仅会产生日志噪音。
+                    if metadata.target() == "xcap::platform::impl_window"
+                        && metadata.level() == log::Level::Error
+                    {
+                        return false;
+                    }
+
                     #[cfg(debug_assertions)]
                     {
                         true
                     }
 
-                    #[cfg(not(debug_assertions))]
-                    {
-                        return enable_run_log.load(std::sync::atomic::Ordering::Relaxed);
-                    }
+				#[cfg(not(debug_assertions))]
+				{
+				let level = match enable_run_log.load(std::sync::atomic::Ordering::Relaxed) {
+					0 => log::LevelFilter::Off,
+					1 => log::LevelFilter::Error,
+					2 => log::LevelFilter::Warn,
+					3 => log::LevelFilter::Info,
+					4 => log::LevelFilter::Debug,
+					_ => log::LevelFilter::Trace,
+				};
+
+					return metadata.level() <= level;
+				}
                 })
                 .build(),
         )
-        .setup(|app| {
+        .setup(move |app| {
             let main_window = app
                 .get_webview_window("main")
                 .expect("[lib::setup] no main window");
@@ -180,27 +288,38 @@ pub fn run() {
                 app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             }
 
+            // 恢复主窗口上一次保存的大小和位置（outer size/position，在 decorations 确定后）
+            restore_main_window_geometry(app.handle());
+
             // 监听窗口关闭事件，拦截关闭按钮
             let window_clone = main_window.clone();
+            let app_handle_for_geo = app.handle().clone();
             main_window.on_window_event(move |event| {
-                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                    api.prevent_close();
+                match event {
+                    tauri::WindowEvent::CloseRequested { api, .. } => {
+                        api.prevent_close();
+                        save_main_window_geometry(&app_handle_for_geo);
 
-                    #[cfg(target_os = "windows")]
-                    {
-                        if let Err(e) = window_clone.hide() {
-                            log::error!("[setup] hide window error: {:?}", e);
+                        #[cfg(target_os = "windows")]
+                        {
+                            if let Err(e) = window_clone.hide() {
+                                log::error!("[setup] hide window error: {:?}", e);
+                            }
                         }
-                    }
 
-                    #[cfg(target_os = "macos")]
-                    {
-                        if let Err(e) = window_clone.hide() {
-                            log::error!("[setup] hide window error: {:?}", e);
+                        #[cfg(target_os = "macos")]
+                        {
+                            if let Err(e) = window_clone.hide() {
+                                log::error!("[setup] hide window error: {:?}", e);
+                            }
                         }
-                    }
 
-                    window_clone.emit("on-hide-main-window", ()).unwrap();
+                        window_clone.emit("on-hide-main-window", ()).unwrap();
+                    }
+                    tauri::WindowEvent::Resized(_) | tauri::WindowEvent::Moved(_) => {
+                        save_main_window_geometry(&app_handle_for_geo);
+                    }
+                    _ => {}
                 }
             });
 
@@ -298,6 +417,7 @@ pub fn run() {
             core::show_main_window,
             core::set_window_rect,
             core::get_commit_sha,
+            set_remember_window_geometry,
             scroll_screenshot::scroll_screenshot_get_image_data,
             scroll_screenshot::scroll_screenshot_init,
             scroll_screenshot::scroll_screenshot_capture,
@@ -367,6 +487,12 @@ pub fn run() {
                     }
                 }
             }
+        })
+        .on_run_event(move |app, event| {
+            // 应用退出时持久化主窗口几何信息，确保即使未触发关闭按钮也能保存
+            if let tauri::RunEvent::Exit = event {
+                save_main_window_geometry(app);
+            }
         });
 
     #[cfg(target_os = "windows")]
@@ -374,7 +500,80 @@ pub fn run() {
         app_builder = app_builder.manage(shared_buffer_service);
     }
 
-    app_builder
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+    let app = app_builder
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(move |app, event| {
+        // 应用退出时持久化主窗口几何信息，确保即使未触发关闭按钮也能保存
+        if let tauri::RunEvent::Exit = event {
+            save_main_window_geometry(app);
+        }
+    });
+}
+
+/// 使用标准库生成 `YYYY-MM-DD_HH-MM-SS` 形式的时间戳（UTC），
+/// 用于日志文件名，避免引入额外的日期时间依赖。
+fn utc_timestamp_tag() -> String {
+    let secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+
+    let days = secs / 86_400;
+    let rem = secs % 86_400;
+    let hour = (rem / 3_600) as u32;
+    let min = ((rem % 3_600) / 60) as u32;
+    let sec = (rem % 60) as u32;
+
+    // 从 1970-01-01 起推算年/月/日（UTC）
+    let mut year: i64 = 1970;
+    let mut d = days as i64;
+    loop {
+        let ydays = if is_leap_year(year) { 366 } else { 365 };
+        if d < ydays {
+            break;
+        }
+        d -= ydays;
+        year += 1;
+    }
+
+    let month_days = month_lengths(year);
+    let mut month = 0usize;
+    let mut day = d;
+    while day >= month_days[month] {
+        day -= month_days[month];
+        month += 1;
+    }
+
+    format!(
+        "{:04}-{:02}-{:02}_{:02}-{:02}-{:02}",
+        year,
+        month + 1,
+        day + 1,
+        hour,
+        min,
+        sec
+    )
+}
+
+fn is_leap_year(year: i64) -> bool {
+    (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
+}
+
+fn month_lengths(year: i64) -> [i64; 12] {
+    [
+        31,
+        if is_leap_year(year) { 29 } else { 28 },
+        31,
+        30,
+        31,
+        30,
+        31,
+        31,
+        30,
+        31,
+        30,
+        31,
+    ]
 }
